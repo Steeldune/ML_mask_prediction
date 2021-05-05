@@ -56,26 +56,6 @@ def elastic_transform(img_path, alpha=200, sigma=20):
 
     return transformed.reshape(image.shape)
 
-def add_threshold(img, size, c):
-
-
-    imga = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
-
-    # cv2.imshow('Image 2', imga)
-
-    imgb = cv2.adaptiveThreshold(imga, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, size, c)
-    imga[np.where(imgb == 0)]=0
-    mask2 = np.ones((1024,1024), np.uint8)
-    mask2[np.where(imgb==0)] = 0
-
-    # cv2.imshow('Image 3', imga)
-
-    imgc = cv2.normalize(imga, None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U, mask=mask2)
-
-    # cv2.imshow('Image 4', imgc)
-
-    return imgc
-
 
 if __name__ == '__main__':
     img_file = 'X:\\BEP_data\\RL012\\Manual Masks\\'
