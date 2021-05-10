@@ -4,7 +4,7 @@ import os
 import getEnvelope
 import particle_analysis
 import data_augments
-from tensorflow.keras.preprocessing import image_dataset_from_directory
+# from tensorflow.keras.preprocessing import image_dataset_from_directory
 import time
 from glob import glob
 from Start_over import add_threshold
@@ -273,14 +273,14 @@ if __name__ == '__main__':
     scandirs('X:\\BEP_data\\Predict_set')
 
     ini_data_path = 'X:\\BEP_data\\'
-    dataset = 'RL010'
-    glob_str = '4*'
+    dataset = 'RL015'
+    glob_str = 'b*'
     Ho_adjust = False
     # Train_Model(ini_data_path, 'Models\\{}'.format('unsup_pred_010_02_04'), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, model_name=new_time, normalize=False)
     # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
-    Use_Model('Models\\unsup_pred_012_02_04', ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=False)
+    Use_Model('X:\\BEP_Project\\Models\\supbaseEMHO', ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=False)
 
     # particle_analysis.ShowResults('data/Nuclei_masks/' + str(Zlevel) + '/', ini_data_path, img_strs, Zlevel=Zlevel,
     #                               upscaleTo=0, threshold_masks=True)

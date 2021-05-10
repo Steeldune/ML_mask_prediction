@@ -126,10 +126,15 @@ def data_upscale(ini_path, currentZoom, targetZoom, img_str, borderCoords, type=
 
 
 if __name__ == '__main__':
-    exports = data_upscale('C:/Users/night_3ns60sk/OneDrive/Documenten/TU_algemeen/GPU_BEP_PRACTICE/data/', 3, 0,
-                           '2_2_3',
-                           [(80, 140, 190, 300), (600, 450, 800, 550)], Zlevel=3)
+    exports = data_upscale('X:\\BEP_data\\RL015\\', 6, 0,
+                           '0_1_6',
+                           [(858, 242, 858 + 128, 242 + 128)], Zlevel=1, use_mask=False, type='Hoechst')
+
+    """"IMPORTANT: For manually writing down border coordinates, make sure to put it Y THEN X. 
+     Reverse the order you would usually find them in image manipulation programs."""
+
     for img in exports:
         cv2.imshow('Image_1', img / 255)
         cv2.waitKey()
         cv2.destroyAllWindows()
+        cv2.imwrite('X:\\BEP_data\\RL015\\Crop_exports\\HO1.png', img)
