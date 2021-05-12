@@ -5,7 +5,7 @@ import os
 # from tensorflow.keras.preprocessing import image_dataset_from_directory
 import time
 from glob import glob
-from Start_over import add_threshold
+from start_over import add_threshold
 
 # pragma warning(disable:4996)
 from PIL import Image
@@ -15,7 +15,12 @@ import cv2
 
 
 def dice_coeff(y_true, y_pred):
-    """Measures the dice coefficient."""
+    """
+    Measures the dice coefficient
+    :param y_true: The true image for validation.
+    :param y_pred: The image predicted by the network
+    :return: Dice coefficient. The closer to one, the more the images are alike.
+    """
     smooth = 1.
     # Flatten
     y_true_f = tf.reshape(y_true, [-1])
@@ -26,21 +31,39 @@ def dice_coeff(y_true, y_pred):
 
 
 def dice_loss(y_true, y_pred):
+    """
+    returns a dice coefficient which can be used as a loss parameter (aka, the closer to zero, the better)
+    :param y_true: The true image for validation
+    :param y_pred: The predicted image from the network
+    :return: Dice loss, the closer to zero, the better.
+    """
     loss = 1 - dice_coeff(y_true, y_pred)
     return loss
 
 
 def bce_dice_loss(y_true, y_pred):
+    """
+    Returns the sum of the binary cross entropy score and the dice loss score
+    :param y_true: The true image for validation
+    :param y_pred: The predicted image from the network
+    :return: bce dice loss score
+    """
     loss = tf.keras.losses.binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
     return loss
 
 
 def cv2_imread(file_path):
+    """
+    Expands the cv2.imread function to be a little more forgiving with its input string.
+    :param file_path: string describing an image address
+    :return: the image at that address.
+    """
     cv_img = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), -1)
     return cv_img
 
 
 def retr_dataset(initial_path, img_list, Zlevel, Pred=False, IMG_WIDTH=1024, IMG_HEIGHT=1024):
+
     label_set = np.zeros((len(img_list), 1024, 1024))
     train_set = np.zeros((len(img_list), 1024, 1024, 3))
     for i, image in tqdm(enumerate(img_list)):
