@@ -160,4 +160,4 @@ def gen_zoomed_training_data(data_path,current_zoom = 3, scale_down=True):
 
 
 if __name__ == '__main__':
-    gen_input_from_mask('X:\\BEP_data\\', only_EM=False, adjust_test=False, generated='', dataset='RL015', normalize=True)
+    gen_input_from_mask('X:\\BEP_data\\', only_EM=False, adjust_test=False, generated='', dataset='RL012', normalize=False)

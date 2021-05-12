@@ -226,7 +226,7 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     callbacks = [tf.keras.callbacks.EarlyStopping(patience=patience),
                  tf.keras.callbacks.TensorBoard(log_dir='logs', histogram_freq=1)]
 
-    results = model.fit(train_generator, validation_data=test_generator, steps_per_epoch=196 // BATCH_SIZE,
+    results = model.fit(train_generator, validation_data=test_generator, steps_per_epoch=35 // BATCH_SIZE,
                         validation_steps=15 // BATCH_SIZE,
                         epochs=300, callbacks=callbacks, batch_size=BATCH_SIZE)
     model.save(model_export + '.h5', include_optimizer=False)
@@ -274,13 +274,13 @@ if __name__ == '__main__':
 
     ini_data_path = 'X:\\BEP_data\\'
     dataset = 'RL015'
-    glob_str = 'b*'
+    glob_str = 'blob*'
     Ho_adjust = False
-    # Train_Model(ini_data_path, 'Models\\{}'.format('unsup_pred_010_02_04'), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, model_name=new_time, normalize=False)
+    # Train_Model(ini_data_path, 'Models\\{}'.format('supbaseEMHO'), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, model_name=new_time, normalize=False)
     # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
-    Use_Model('X:\\BEP_Project\\Models\\supbaseEMHO', ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=False)
+    Use_Model('X:\\BEP_Project\\Models\\sup_RL012_EMHO_full', ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=True)
 
     # particle_analysis.ShowResults('data/Nuclei_masks/' + str(Zlevel) + '/', ini_data_path, img_strs, Zlevel=Zlevel,
     #                               upscaleTo=0, threshold_masks=True)
@@ -290,7 +290,7 @@ if __name__ == '__main__':
         img = img1.split('\\')[-1]
         mask_img = cv2_imread('X:\\BEP_data\\Predict_set\\Output\\' + img) / 255
         EM_img = cv2_imread('X:\\BEP_data\\{}\\EM\\Collected\\'.format(dataset) + img)
-        HO_img = cv2_imread('X:\\BEP_data\\{}\\Hoechst\\{}\\'.format(dataset, ('Collected', 'Collected_thresh')[Ho_adjust]) + img)
+        HO_img = cv2_imread('X:\\BEP_data\\{}\\Hoechst\\{}\\'.format(dataset, ('Collected', 'Collected')[Ho_adjust]) + img)
         masked_img = np.dstack((EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX))) * (1-mask_img),
                                 EM_img * (1- mask_img),
                                 EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)))))
