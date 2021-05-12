@@ -8,9 +8,9 @@ from skimage.morphology import disk
 from sklearn.cluster import OPTICS, cluster_optics_dbscan, AgglomerativeClustering, KMeans
 from collections import Counter
 import tqdm
-import data_augments
+import data_retrievals
 from glob import glob
-from Compare_images import output_IOU
+from compare_images import output_IOU
 
 def get_path(img_str, Zlevel=1, type='EM'):
     return_path = 'data/{}/{}/{}.png'.format(type, str(Zlevel), img_str)

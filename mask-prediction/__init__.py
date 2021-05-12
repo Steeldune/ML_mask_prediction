@@ -1,6 +1,6 @@
 from .adjust_masks import *
 from .compare_images import *
-from .data_augments import *
+from .data_retrievals import *
 from .get_envelope import *
 from .particle_analysis import *
 from .start_over import *
