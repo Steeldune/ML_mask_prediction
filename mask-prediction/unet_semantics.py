@@ -62,44 +62,12 @@ def cv2_imread(file_path):
     return cv_img
 
 
-def retr_dataset(initial_path, img_list, Zlevel, Pred=False, IMG_WIDTH=1024, IMG_HEIGHT=1024):
-
-    label_set = np.zeros((len(img_list), 1024, 1024))
-    train_set = np.zeros((len(img_list), 1024, 1024, 3))
-    for i, image in tqdm(enumerate(img_list)):
-        EM_img = np.asarray(Image.open(initial_path + 'EM/' + str(Zlevel) + '/' + image + '.png'))
-        HO_img = np.asarray(Image.open(initial_path + 'Hoechst/' + str(Zlevel) + '/' + image + '.png'))
-        IN_img = np.asarray(Image.open(initial_path + 'Insulin/' + str(Zlevel) + '/' + image + '.png'))
-        train_img = np.zeros((IMG_WIDTH, IMG_HEIGHT, 3))
-        train_img[:, :, 0] = EM_img
-        train_img[:, :, 1] = HO_img
-        train_img[:, :, 2] = IN_img
-        train_set[i] = train_img
-        if not Pred:
-            NU_img = np.asarray(Image.open(ini_data_path + 'Nuclei_masks/' + str(Zlevel) + '/' + image + '.png')) / 255
-
-            label_set[i] = NU_img
-
-    train_dataset = tf.data.Dataset.from_tensor_slices((train_set, label_set))
-    return train_dataset
-
-
-def check_gpu():
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    if gpus:
-        try:
-            # Currently, memory growth needs to be the same across GPUs
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-                print(gpu)
-            logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-            print(logical_gpus)
-        except RuntimeError as e:
-            # Memory growth must be set before GPUs have been initialized
-            print(e)
-
-
 def scandirs(path):
+    """
+    Deletes all png's and jpg's in a file hierarchy TODO: Revise this function to back up all images instead of trashing them.
+    :param path: The address of the highest level address
+    :return:
+    """
     for root, dirs, files in os.walk(path):
         for currentFile in files:
             exts = ('.png', '.jpg')
@@ -108,7 +76,22 @@ def scandirs(path):
 
 
 def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
-                IMG_CHANNELS=3, BATCH_SIZE=8, patience=100, model_name='new_model', normalize=False, using_weights=False):
+                IMG_CHANNELS=3, BATCH_SIZE=8, patience=100, normalize=False, using_weights=False):
+    """
+    This is the training function, which compiles a network, and uses the data given to train a model.
+    :param ini_data_path:   Address where the following files have to be found:
+                                Test_set
+                                Train_set
+    :param model_export:    Address where the model will be saved eventually
+    :param IMG_WIDTH:       Expected width of images in pixels
+    :param IMG_HEIGHT:      Expected height if images in pixels
+    :param IMG_CHANNELS:    Expected amount of channels in image training data
+    :param BATCH_SIZE:      Amount of images loaded into the model per step.
+    :param patience:        Amount of epochs with no noticeable improvement that have to occur before the training terminates early
+    :param normalize:       Boolean on whether the input data will be normalized along the standard deviation
+    :param using_weights:   Boolean on whether the validation data will include weights (and therefore have multiple channels)
+    :return:                True
+    """
     if IMG_CHANNELS == 3:
         using_rgb = True
     else:
@@ -126,6 +109,7 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
         vertical_flip=True,
         fill_mode='reflect'
     )
+    """Training data is augmented by flipping, rotating and shifting the image. Any part of the image that has no data will be filled with reflected data."""
 
     test_gen_args = dict(
         samplewise_std_normalization=normalize,
@@ -133,6 +117,7 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
         featurewise_std_normalization=False,
         rescale=1. / 255,
     )
+    """Testing data is not augmented"""
 
     image_datagen = tf.keras.preprocessing.image.ImageDataGenerator(**data_gen_args)
     mask_datagen = tf.keras.preprocessing.image.ImageDataGenerator(**data_gen_args)
@@ -258,8 +243,25 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
 
 def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_data\\Predict_set\\', only_EM=False,
               HO_adjust=False, normalize=False):
+    """
+    This function loads a model that has been made, and saves predictions from the data it has been given. Supply it
+    with a folder and a filter for the images to predict on, and you're golden. Input data will be pulled
+    from given datasets, and will be placed in the same file structure where output data will be exported to.
+    :param model_path:  Address where the model can be found.
+    :param data_path:   Address where datasets can be found. For instance, the folder containing 'RL012'.
+    :param glob_str:    String on which the images within the data_path will be filtered. For instance, putting in '4_*' will only predict on images of z-level 4.
+    :param dataset:     Specifies which dataset will be used. For instance: 'RL012'
+    :param export_path: Address where the prediction data will be exported to, both input and output.
+    :param only_EM:     Boolean on whether the input data will contain only EM or more (Hoechst data, for example)
+    :param HO_adjust:   Boolean on whether the secondary (non-EM) data will be thresholded. Only use in very specific cases.
+    :param normalize:   Boolean on whether to normalize input data.
+    :return:            True
+    """
     EM_addresses = glob(data_path + dataset + '\\EM\\Collected\\' + glob_str)
     for EM_ad in EM_addresses:
+        """For each image in the glob string, the EM data is pulled, along with the secondary data, if requested. 
+        This will then be written into the predict_data folder as input data. This operation is deliberate, 
+        so that after the prediction has been made, the input data can also be looked at."""
         img_str = EM_ad.split('\\')[-1]
         EM_img = cv2_imread(EM_ad)
         if only_EM:
@@ -286,6 +288,7 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
     output = model.predict(validation_generator)
     for i, pic in enumerate(output):
         cv2.imwrite(export_path + 'Output\\{}'.format(EM_addresses[i].split('\\')[-1]), pic * 255)
+    """Once the prediction has been made, it is written as a png in the predict_set folder."""
     return True
 
 
@@ -307,6 +310,17 @@ if __name__ == '__main__':
     # particle_analysis.ShowResults('data/Nuclei_masks/' + str(Zlevel) + '/', ini_data_path, img_strs, Zlevel=Zlevel,
     #                               upscaleTo=0, threshold_masks=True)
     #
+    """Beneath is some data processing code which takes predictions and does two things:
+            It makes an EM overlay image, where the EM, the secondary data and the prediction can be seen 
+            together in one image. 
+            EM is a black and white background, the secondary data is green, and the prediction is red.
+            
+            The second thing it does is it looks for any manual masks in the data folder, and makes mask overlap images 
+            with the predictions. 
+            In these overlap images, blue indicates a false negative, and red indicates a false positive. 
+            Black and white are true negative and true positive respectively.
+    """
+
     img_strs = glob(ini_data_path + '{}\\EM\\Collected\\{}'.format(dataset, glob_str))
     for img1 in img_strs:
         img = img1.split('\\')[-1]
