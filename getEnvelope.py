@@ -63,6 +63,19 @@ def get_mask(ini_path, coords, img_str, zoom_factor, Zlevel=1, r=1, thresh=False
 
 def data_upscale(ini_path, currentZoom, targetZoom, img_str, borderCoords, type='EM', Zlevel=1, use_mask=True,
                  thresh_mask=False):
+    """
+
+    :param ini_path:
+    :param currentZoom:
+    :param targetZoom:
+    :param img_str:
+    :param borderCoords:
+    :param type:
+    :param Zlevel:
+    :param use_mask:
+    :param thresh_mask:
+    :return:
+    """
     zoom_factor = np.power(2, currentZoom - targetZoom)
 
     img = read_img_string(img_str)

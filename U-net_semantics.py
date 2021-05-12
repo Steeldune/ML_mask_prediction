@@ -1,9 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
-import getEnvelope
-import particle_analysis
-import data_augments
+
 # from tensorflow.keras.preprocessing import image_dataset_from_directory
 import time
 from glob import glob
@@ -17,6 +15,7 @@ import cv2
 
 
 def dice_coeff(y_true, y_pred):
+    """Measures the dice coefficient."""
     smooth = 1.
     # Flatten
     y_true_f = tf.reshape(y_true, [-1])
@@ -86,7 +85,7 @@ def scandirs(path):
 
 
 def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
-                IMG_CHANNELS=3, BATCH_SIZE=8, patience=100, model_name='new_model', normalize=False):
+                IMG_CHANNELS=3, BATCH_SIZE=8, patience=100, model_name='new_model', normalize=False, using_weights=False):
     if IMG_CHANNELS == 3:
         using_rgb = True
     else:
@@ -135,7 +134,7 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
         class_mode=None,
         seed=seed,
         target_size=(1024, 1024),
-        color_mode='grayscale',
+        color_mode=('grayscale', 'rgb')[using_weights],
         batch_size=1,
         shuffle=True
     )
@@ -153,7 +152,7 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
         class_mode=None,
         shuffle=False,
         target_size=(1024, 1024),
-        color_mode='grayscale',
+        color_mode=('grayscale', 'rgb')[using_weights],
         batch_size=1
     )
 
@@ -251,7 +250,7 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
             out_img = np.dstack((EM_img, HO_img, np.zeros((1024, 1024), np.uint8)))
         cv2.imwrite(export_path + 'Input\\1\\' + img_str, out_img)
 
-    model = tf.keras.models.load_model(model_path + '.h5', compile=False)
+    model = tf.keras.models.load_model(model_path + '.h5', compile=True)
     test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
         rescale=1. / 255
     )
@@ -273,14 +272,14 @@ if __name__ == '__main__':
     scandirs('X:\\BEP_data\\Predict_set')
 
     ini_data_path = 'X:\\BEP_data\\'
-    dataset = 'RL015'
-    glob_str = 'blob*'
+    dataset = 'RL012'
+    glob_str = 'blob_*'
     Ho_adjust = False
-    # Train_Model(ini_data_path, 'Models\\{}'.format('supbaseEMHO'), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, model_name=new_time, normalize=False)
+    Train_Model(ini_data_path, 'Models\\{}'.format('sup_RL012_EMHO_full2'), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, model_name=new_time, normalize=False)
     # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
-    Use_Model('X:\\BEP_Project\\Models\\sup_RL012_EMHO_full', ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=True)
+    # Use_Model('X:\\BEP_Project\\Models\\sup_RL012_EMHO_full', ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=True)
 
     # particle_analysis.ShowResults('data/Nuclei_masks/' + str(Zlevel) + '/', ini_data_path, img_strs, Zlevel=Zlevel,
     #                               upscaleTo=0, threshold_masks=True)
