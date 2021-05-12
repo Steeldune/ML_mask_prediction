@@ -272,14 +272,14 @@ if __name__ == '__main__':
     scandirs('X:\\BEP_data\\Predict_set')
 
     ini_data_path = 'X:\\BEP_data\\'
-    dataset = 'RL012'
-    glob_str = 'blob_*'
+    dataset = 'RL010'
+    glob_str = '4*'
     Ho_adjust = False
-    Train_Model(ini_data_path, 'Models\\{}'.format('sup_RL012_EMHO_full2'), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, model_name=new_time, normalize=False)
+    # Train_Model(ini_data_path, 'Models\\{}'.format('unsup_pred_010_02_04'), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, model_name=new_time, normalize=False)
     # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
-    # Use_Model('X:\\BEP_Project\\Models\\sup_RL012_EMHO_full', ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=True)
+    Use_Model('Models\\unsup_pred_012_02_04', ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=False)
 
     # particle_analysis.ShowResults('data/Nuclei_masks/' + str(Zlevel) + '/', ini_data_path, img_strs, Zlevel=Zlevel,
     #                               upscaleTo=0, threshold_masks=True)
@@ -289,7 +289,7 @@ if __name__ == '__main__':
         img = img1.split('\\')[-1]
         mask_img = cv2_imread('X:\\BEP_data\\Predict_set\\Output\\' + img) / 255
         EM_img = cv2_imread('X:\\BEP_data\\{}\\EM\\Collected\\'.format(dataset) + img)
-        HO_img = cv2_imread('X:\\BEP_data\\{}\\Hoechst\\{}\\'.format(dataset, ('Collected', 'Collected')[Ho_adjust]) + img)
+        HO_img = cv2_imread('X:\\BEP_data\\{}\\Hoechst\\{}\\'.format(dataset, ('Collected', 'Collected_thresh')[Ho_adjust]) + img)
         masked_img = np.dstack((EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX))) * (1-mask_img),
                                 EM_img * (1- mask_img),
                                 EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)))))
