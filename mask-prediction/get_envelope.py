@@ -1,15 +1,14 @@
 import numpy as np
 import cv2
-from PIL import Image
 import os
-
-
-def cv2_imread(file_path):
-    cv_img = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), -1)
-    return cv_img
+from unet_semantics import cv2_imread
 
 
 def read_img_string(img_str):
+    """
+    :param img_str: a string describing an image, like '4_3_3'
+    :return:
+    """
     img_array = img_str.split('_')
     img_array = list(map(int, img_array))
     return img_array
