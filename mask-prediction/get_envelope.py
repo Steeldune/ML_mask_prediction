@@ -126,6 +126,8 @@ def data_upscale(ini_path, currentZoom, targetZoom, img_str, borderCoords, type=
         x_range = x_range[coords[1] // interval: 1 + coords[3] // interval]
         img_data_list = []
         for i, x in enumerate(x_range):
+            """The next two for loops go along all high-detail images that are involved in the crop. 
+            The entire image is loaded, then it is cut down according to the boundary coordinates"""
             column_list = []
             for j, y in enumerate(y_range):
                 target_img_str = str(y) + '_' + str(x) + '_' + str(targetZoom)
@@ -137,6 +139,8 @@ def data_upscale(ini_path, currentZoom, targetZoom, img_str, borderCoords, type=
                 img_data = cv2_imread(ini_path + type + '/' + str(Zlevel) + '/' + target_img_str + '.png')
 
                 if j == (weird_compare(interval, coords[0], coords[2]) + (coords[2] - coords[0]) // interval):
+                    """This if statement checks if the image we're dealing with crosses with a boundary. 
+                    If this is the case, the image will be cut off at that boundary. Same for the if statement below."""
                     img_data = img_data[: ((coords[2] % interval) * zoom_factor), :]
                 if j == 0:
                     img_data = img_data[((coords[0] % interval) * zoom_factor):, :]

@@ -1,6 +1,10 @@
+import datetime
+
 import tensorflow as tf
 import numpy as np
 import os
+import shutil
+import errno
 
 # from tensorflow.keras.preprocessing import image_dataset_from_directory
 import time
@@ -73,6 +77,14 @@ def scandirs(path):
             exts = ('.png', '.jpg')
             if currentFile.lower().endswith(exts):
                 os.remove(os.path.join(root, currentFile))
+
+def backup_predicts(path, dest):
+    try:
+        shutil.copytree(path, dest)
+    except OSError as exc: # python >2.5
+        if exc.errno == errno.ENOTDIR:
+            shutil.copy(path, dest)
+        else: raise
 
 
 def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
@@ -235,7 +247,7 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
 
     results = model.fit(train_generator, validation_data=test_generator, steps_per_epoch=35 // BATCH_SIZE,
                         validation_steps=15 // BATCH_SIZE,
-                        epochs=300, callbacks=callbacks, batch_size=BATCH_SIZE)
+                        epochs=1000, callbacks=callbacks, batch_size=BATCH_SIZE)
     model.save(model_export + '.h5', include_optimizer=False)
     print('Done! Model can be found in ' + model_export)
     return True
@@ -294,18 +306,20 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
 
 if __name__ == '__main__':
     new_time = time.asctime()
+    model_name = 'sup_base_emho'
+    today = datetime.datetime.now()
 
     scandirs('X:\\BEP_data\\Predict_set')
-
     ini_data_path = 'X:\\BEP_data\\'
-    dataset = 'RL010'
-    glob_str = '4*'
+    dataset = 'RL015'
+    glob_str = 'blob*'
     Ho_adjust = False
-    # Train_Model(ini_data_path, 'Models\\{}'.format('unsup_pred_010_02_04'), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, model_name=new_time, normalize=False)
+    # Train_Model(ini_data_path, 'Models\\{}'.format('sup_base_emho'), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, normalize=False)
     # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
-    Use_Model('Models\\unsup_pred_012_02_04', ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=False)
+    Use_Model('Models\\{}'.format(model_name), ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=True)
+
 
     # particle_analysis.ShowResults('data/Nuclei_masks/' + str(Zlevel) + '/', ini_data_path, img_strs, Zlevel=Zlevel,
     #                               upscaleTo=0, threshold_masks=True)
@@ -319,6 +333,7 @@ if __name__ == '__main__':
             with the predictions. 
             In these overlap images, blue indicates a false negative, and red indicates a false positive. 
             Black and white are true negative and true positive respectively.
+        Finally, the images are stored in a backup location named after the model that was used, and the time it was invoked.
     """
 
     img_strs = glob(ini_data_path + '{}\\EM\\Collected\\{}'.format(dataset, glob_str))
@@ -344,3 +359,7 @@ if __name__ == '__main__':
 
             mask_overlap = np.dstack((man_mask_img, overl_img.astype(np.uint8), np.multiply(mask_img, 255.0).astype(np.uint8)))
             cv2.imwrite('X:\\BEP_data\\Predict_set\\Mask_overlaps\\'+ 'overlap_' + img, mask_overlap)
+
+
+    backup_predicts('X:\\BEP_data\\Predict_set', 'X:\\BEP_data\\Predict_backups\\{}'.format(model_name+'_'+today.strftime("%Y-%m-%d_%H-%M-%S")))
+
