@@ -2,7 +2,11 @@
 import os
 import numpy as np
 import cv2
-from unet_semantics import cv2_imread
+
+
+def cv2_imread(file_path):
+    cv_img = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), -1)
+    return cv_img
 
 
 def gen_input_from_mask(data_path, only_EM=False, adjust_test=False, dataset='RL012', normalize=False):
@@ -29,7 +33,7 @@ def gen_input_from_mask(data_path, only_EM=False, adjust_test=False, dataset='RL
             HO_img = cv2_imread(HO_path)
             if normalize:
                 HO_img = cv2.normalize(HO_img, None, 255, 0, cv2.NORM_INF)
-            TR_img = np.dstack((EM_img, HO_img, np.zeros((1024,1024))))
+            TR_img = np.dstack((EM_img, HO_img, np.zeros((1024, 1024))))
         else:
             TR_img = EM_img
         cv2.imwrite(

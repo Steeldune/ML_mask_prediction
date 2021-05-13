@@ -12,13 +12,16 @@ import data_retrievals
 from glob import glob
 from compare_images import output_IOU
 
+
 def get_path(img_str, Zlevel=1, type='EM'):
     return_path = 'data/{}/{}/{}.png'.format(type, str(Zlevel), img_str)
     return return_path
 
+
 def cv2_imread(file_path):
     cv_img = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), -1)
     return cv_img
+
 
 def most_frequent(List):
     occurence_count = Counter(List)
@@ -82,7 +85,7 @@ def get_nuclei_pos(ho, kernel, dist_thresh=125):
         mass_centres[i, 1] = (int(M['m01'] / M['m00']))
 
     if np.shape(mass_centres)[0] == 1:
-        return [get_cluster_center(mass_centres)], [1,2]
+        return [get_cluster_center(mass_centres)], [1, 2]
 
     clust = AgglomerativeClustering(None, distance_threshold=dist_thresh)
 
@@ -203,8 +206,10 @@ def get_floodfill(img, coords, margin=3):
             l = label_list.index(most_frequent(label_list))
             label_x = l % (margin * 2)
             label_y = l // (margin * 2)
-            retval, new_img, mask, rect = cv2.floodFill(img, None, ((label_x-margin) + coord_new[1], (label_y-margin) + coord_new[0]), 0)
+            retval, new_img, mask, rect = cv2.floodFill(img, None, (
+            (label_x - margin) + coord_new[1], (label_y - margin) + coord_new[0]), 0)
     return new_img
+
 
 def assemble_labels(img_voronoi, img_cells, img_EM=None, close_op=False, dilate_op=False, disksize=3):
     if close_op:
@@ -221,8 +226,8 @@ def assemble_labels(img_voronoi, img_cells, img_EM=None, close_op=False, dilate_
         output_weights = cv2.bitwise_or(img_voronoi, img_cells)
         output_mask = img_cells
     else:
-        output_weights = np.dstack((img_EM*img_voronoi, img_EM*img_cells, img_EM))
-        output_mask = np.dstack((img_EM, img_EM, img_EM*img_cells))
+        output_weights = np.dstack((img_EM * img_voronoi, img_EM * img_cells, img_EM))
+        output_mask = np.dstack((img_EM, img_EM, img_EM * img_cells))
     return output_weights, output_mask
 
 
@@ -237,7 +242,6 @@ def write_weights_masks(EM_address, HO_address, dist, thr_size=1200, truncate=Tr
         # cv2.imshow('{}'.format(img_str), img_HO)
         # cv2.waitKey()
         # cv2.destroyAllWindows()
-
 
     IMG_WIDTH, IMG_HEIGHT = np.shape(img_HO)
 
@@ -273,12 +277,11 @@ def write_weights_masks(EM_address, HO_address, dist, thr_size=1200, truncate=Tr
     particles = [cnt for cnt in cnts if cv2.arcLength(cnt, True) < thr_size]
 
     # particles = [cnt for cnt in particles if cv2.contourArea(cnt) < 10000]
-    im = np.zeros((1024,1024), dtype=np.uint8)
+    im = np.zeros((1024, 1024), dtype=np.uint8)
     for contour in particles:
         cv2.drawContours(im, [contour], -1, 255, -1)
 
     return assemble_labels(voronoi_img, im, close_op=True, dilate_op=True)
-
 
 
 if __name__ == '__main__':
@@ -287,15 +290,15 @@ if __name__ == '__main__':
     threshold = False
 
     ini_data_path = 'X:\\BEP_data\\{}\\'.format(database)
-    img_list = glob(ini_data_path+'Hoechst_predicted\\Collected\\*.png')
+    img_list = glob(ini_data_path + 'Hoechst_predicted\\Collected\\*.png')
 
     dist = 3.9
 
     for HO_address in img_list:
         img_str = HO_address.split('\\')[-1]
-        if glob(ini_data_path+'EM\\Collected\\{}'.format(img_str)) != []:
+        if glob(ini_data_path + 'EM\\Collected\\{}'.format(img_str)) != []:
             print('Working on image {}!'.format(img_str))
-            EM_address = ini_data_path+'EM\\Collected\\{}'.format(img_str)
+            EM_address = ini_data_path + 'EM\\Collected\\{}'.format(img_str)
             weight, mask = write_weights_masks(EM_address, HO_address, dist, truncate=threshold)
             cv2.imwrite(ini_data_path + '\\Masks_Generated\\{}'.format(img_str), mask)
             #

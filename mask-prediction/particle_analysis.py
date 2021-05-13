@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import getEnvelope
+import get_envelope
 
 
 def cv2_imread(file_path):
@@ -59,7 +59,7 @@ def exportNuclei(nuclei, ini_data_path, image, dilate=10, Zlevel=1, upscaleTo=No
 
     else:
 
-        nuclei_exports = getEnvelope.data_upscale(ini_data_path, zoom_level, upscaleTo, image, new_borders,
+        nuclei_exports = get_envelope.data_upscale(ini_data_path, zoom_level, upscaleTo, image, new_borders,
                                                   Zlevel=Zlevel, thresh_mask=thresh_mask)
         for i, nucleus in enumerate(nuclei_exports):
             cv2.imwrite(export_path + 'n' + str(i) + '.png', nucleus)
@@ -74,9 +74,9 @@ def stitch_images(image1, coords1, image2, coords2, ini_path, Zlevel=1, Hor=True
         EM_2_crop = EM_2[coords2[0]:coords2[2], coords2[1]: coords2[3]]
     else:
         zoom_level = int(image1.split('_')[2])
-        EM_1_crop = getEnvelope.data_upscale(ini_path, zoom_level, UpscaleTo, image1, [coords1], Zlevel=Zlevel,
+        EM_1_crop = get_envelope.data_upscale(ini_path, zoom_level, UpscaleTo, image1, [coords1], Zlevel=Zlevel,
                                              thresh_mask=thresh_mask)
-        EM_2_crop = getEnvelope.data_upscale(ini_path, zoom_level, UpscaleTo, image2, [coords2], Zlevel=Zlevel,
+        EM_2_crop = get_envelope.data_upscale(ini_path, zoom_level, UpscaleTo, image2, [coords2], Zlevel=Zlevel,
                                              thresh_mask=thresh_mask)
         zoom_factor = np.power(2, zoom_level - UpscaleTo)
         coords1 = [x * zoom_factor for x in coords1]
@@ -191,6 +191,6 @@ def ShowResults(imgs_path, ini_data_path, image_list, Zlevel=1, upscaleTo=None, 
 if __name__ == '__main__':
     ShowResults('C:/Users/night_3ns60sk/OneDrive/Documenten/TU_algemeen/GPU_BEP_PRACTICE/model_results/',
                 'C:/Users/night_3ns60sk/OneDrive/Documenten/TU_algemeen/GPU_BEP_PRACTICE/data/',
-                getEnvelope.get_data('C:/Users/night_3ns60sk/OneDrive/Documenten/TU_algemeen/GPU_BEP_PRACTICE/data/',
+                get_envelope.get_data('C:/Users/night_3ns60sk/OneDrive/Documenten/TU_algemeen/GPU_BEP_PRACTICE/data/',
                                      1, 3, (1, 1, 4, 4), JustStrs=True)[1], Zlevel=1, upscaleTo=0,
                 threshold_masks=False)

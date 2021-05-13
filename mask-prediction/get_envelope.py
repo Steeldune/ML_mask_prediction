@@ -1,13 +1,13 @@
 import numpy as np
 import cv2
 import os
-from unet_semantics import cv2_imread
+from data_retrievals import cv2_imread
 
 
 def read_img_string(img_str):
     """
-    :param img_str: a string describing an image, like '4_3_3'
-    :return:
+    :param      img_str: a string describing an image, like '4_3_3'
+    :return:    integer array of this list. e.g: [4,3,3]
     """
     img_array = img_str.split('_')
     img_array = list(map(int, img_array))
@@ -15,6 +15,15 @@ def read_img_string(img_str):
 
 
 def weird_compare(interval, start, end):
+    """
+    This is a function that is used later on in data_upscale, to add a corrective integer (either 1 or 0),
+    when that function checks whether the image it is working on has reached the border.
+    This function is not expected to be used anywhere outside data_upscale.
+    :param interval:    Width in pixels of the target zoom images compared to the original image.
+    :param start:       Position in pixels of the start of the ROI (either in X or Y direction)
+    :param end:         Position in pixels of the end of the ROI (either in X or Y direction)
+    :return:            0 or 1, depending on where the ROI lies on the direction.
+    """
     if interval - (end - start) % interval <= start % interval:
         return 1
     else:
@@ -22,6 +31,18 @@ def weird_compare(interval, start, end):
 
 
 def get_data(ini_path, Z, zoom, bound_coords, JustStrs=False):
+    """
+    This function either returns a list of names for the images that it gets the boundary coordinates from,
+    or it gives the list, plus a 4-dimensional array of the data from those images.
+    :param ini_path:    Address pointing to a dataset file containing EM, HO and IN images.
+    :param Z:           Integer describing the layer from which to pull the images
+    :param zoom:        Integer describing the level of detail to get (0 highest, 6 lowest)
+    :param bound_coords:Start and end points of the images that are going to be pulled.
+                        These coordinates point to the names of the images themselves.
+    :param JustStrs:    Boolean on whether the function returns just the list of strings (True)
+                        or if it returns the data as well (False)
+    :return:            Either a list of strings, or the list plus an array of the data described in those strings.
+    """
     EM_path = ini_path + 'EM/' + str(Z) + '/'
     HO_path = ini_path + 'Hoechst/' + str(Z) + '/'
     IN_path = ini_path + 'Insulin/' + str(Z) + '/'
@@ -47,6 +68,17 @@ def get_data(ini_path, Z, zoom, bound_coords, JustStrs=False):
 
 
 def get_mask(ini_path, coords, img_str, zoom_factor, Zlevel=1, r=1, thresh=False):
+    """
+    Takes a given mask, and applies the appropriate crops and scaling to multiply it with the data it is supposed to mask.
+    :param ini_path:    Address points to a folder containing Nuclei_masks
+    :param coords:      Boundary points [x, y, x+dx, y+dy] which crops the mask.
+    :param img_str:     string pointing to the specific mask that we want.
+    :param zoom_factor: The zoom factor which will be applied to scale the mask.
+    :param Zlevel:      The Z coordinate which will also be used to get at the mask you want.
+    :param r:           The mask index for the image we're dealing with.
+    :param thresh:      Boolean on whether to threshold the mask image.
+    :return:            The cropped and scaled mask image.
+    """
     mask_img = cv2_imread(ini_path + 'Nuclei_masks/' + str(Zlevel) + '/' + img_str + '.png')
     mask_crop = mask_img[coords[0]:coords[2], coords[1]: coords[3]]
     mask_crop = cv2.morphologyEx(mask_crop, cv2.MORPH_CLOSE, np.ones((4, 4)))
@@ -63,17 +95,20 @@ def get_mask(ini_path, coords, img_str, zoom_factor, Zlevel=1, r=1, thresh=False
 def data_upscale(ini_path, currentZoom, targetZoom, img_str, borderCoords, type='EM', Zlevel=1, use_mask=True,
                  thresh_mask=False):
     """
-
-    :param ini_path:
-    :param currentZoom:
-    :param targetZoom:
-    :param img_str:
-    :param borderCoords:
-    :param type:
-    :param Zlevel:
-    :param use_mask:
-    :param thresh_mask:
-    :return:
+    This function takes one image, boundary coordinates on the pixel level and a target for the amount of detail,
+    and delivers a cropped version of the original image, with the upscaled data.
+    More explanation will follow in the function itself.
+    :param ini_path:        Address pointing to a file which contains the various data types (EM, HO etc.).
+    :param currentZoom:     The zoom level of the image from which you want more detail. (6 worst, 0 best)
+    :param targetZoom:      The zoom level at which you want the detail to be (6 worst, 0 best)
+    IMPORTANT: CurrentZoom HAS to be equal or larger than TargetZoom.
+    :param img_str:         The particular image that you want to crop and upscale.
+    :param borderCoords:    The coordinates in pixels which crop the image [y, x, y + dy, x + dx]
+    :param type:            String which specifies the type of data to upscale (EM, HO, etc.)
+    :param Zlevel:          The Z-level at which your data lies
+    :param use_mask:        Boolean on whether to multiply the upscaled data with a corresponding mask.
+    :param thresh_mask:     Boolean on whether to threshold the mask mentions one line above.
+    :return:                The upscaled data in array form.
     """
     zoom_factor = np.power(2, currentZoom - targetZoom)
 
@@ -138,7 +173,7 @@ def data_upscale(ini_path, currentZoom, targetZoom, img_str, borderCoords, type=
 
 
 if __name__ == '__main__':
-    exports = data_upscale('X:\\BEP_data\\RL015\\', 6, 0,
+    exports = data_upscale('X:\\BEP_data\\RL015\\', 6, 3 ,
                            '0_1_6',
                            [(858, 242, 858 + 128, 242 + 128)], Zlevel=1, use_mask=False, type='Hoechst')
 
