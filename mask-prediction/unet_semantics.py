@@ -68,7 +68,7 @@ def cv2_imread(file_path):
 
 def scandirs(path):
     """
-    Deletes all png's and jpg's in a file hierarchy TODO: Revise this function to back up all images instead of trashing them.
+    Deletes all png's and jpg's in a file hierarchy
     :param path: The address of the highest level address
     :return:
     """
