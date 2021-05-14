@@ -15,11 +15,13 @@ from start_over import add_threshold
 
 import cv2
 
+
 def apply_weights(y_true, y_pred):
     y0, y1, y2 = tf.split(y_true, [1, 1, 1], 3)
     y_pred_weighted = tf.multiply(y_pred, y1)
     y_true_weighted = tf.multiply(y_true, y1)
     return y_pred_weighted, y_true_weighted
+
 
 def dice_coeff(y_true, y_pred):
     """
@@ -47,12 +49,13 @@ def dice_loss(y_true, y_pred):
     loss = 1 - dice_coeff(y_true, y_pred)
     return loss
 
+
 def dice_loss_weighted(y_true, y_pred):
     y0, y1, y2 = tf.split(y_true, [1, 1, 1], 3)
-    tf.print(tf.shape(y_pred))
+    # tf.print(tf.shape(y_pred))
 
     y_pred_weighted = tf.multiply(y_pred, y1)
-    y_true_weighted = tf.multiply(y0, y1)
+    y_true_weighted = tf.multiply(y2, y1)
 
     loss = dice_loss(y_true_weighted, y_pred_weighted)
     return loss
@@ -69,14 +72,18 @@ def bce_dice_loss(y_true, y_pred):
 
     return loss
 
+
 def bce_dice_loss_weighted(y_true, y_pred):
     y0, y1, y2 = tf.split(y_true, [1, 1, 1], 3)
-    tf.print(tf.shape(y_pred))
+    # tf.print(y2)
 
     y_pred_weighted = tf.multiply(y_pred, y1)
-    y_true_weighted = tf.multiply(y0, y1)
+    y_true_weighted = tf.multiply(y2, y1)
 
-    loss = tf.keras.losses.binary_crossentropy(y_true_weighted, y_pred_weighted) + dice_loss(y_true_weighted,  y_pred_weighted)
+    # tf.print(y_true_weighted)
+
+    loss = tf.keras.losses.binary_crossentropy(y_true_weighted, y_pred_weighted) + dice_loss(y_true_weighted,
+                                                                                             y_pred_weighted)
 
     return loss
 
@@ -103,13 +110,15 @@ def scandirs(path):
             if currentFile.lower().endswith(exts):
                 os.remove(os.path.join(root, currentFile))
 
+
 def backup_predicts(path, dest):
     try:
         shutil.copytree(path, dest)
-    except OSError as exc: # python >2.5
+    except OSError as exc:  # python >2.5
         if exc.errno == errno.ENOTDIR:
             shutil.copy(path, dest)
-        else: raise
+        else:
+            raise
 
 
 def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
@@ -262,7 +271,8 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     outputs = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(c9)
 
     model = tf.keras.Model(inputs=[input1], outputs=[outputs])
-    model.compile(optimizer='adam', loss=([bce_dice_loss], [bce_dice_loss_weighted])[using_weights], metrics=([dice_loss], [dice_loss_weighted])[using_weights])
+    model.compile(optimizer='adam', loss=([bce_dice_loss], [bce_dice_loss_weighted])[using_weights],
+                  metrics=([dice_loss], [dice_loss_weighted])[using_weights])
     model.summary()
 
     ####################################################################################################################
@@ -340,12 +350,13 @@ if __name__ == '__main__':
     dataset = 'RL015'
     glob_str = 'blob*'
     Ho_adjust = False
-    Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, normalize=False, using_weights=True)
+    Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70,
+                normalize=False, using_weights=True)
     # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
-    Use_Model('Models\\{}'.format(model_name), ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False, normalize=True)
-
+    Use_Model('Models\\{}'.format(model_name), ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False,
+              normalize=True)
 
     # particle_analysis.ShowResults('data/Nuclei_masks/' + str(Zlevel) + '/', ini_data_path, img_strs, Zlevel=Zlevel,
     #                               upscaleTo=0, threshold_masks=True)
@@ -367,25 +378,25 @@ if __name__ == '__main__':
         img = img1.split('\\')[-1]
         mask_img = cv2_imread('X:\\BEP_data\\Predict_set\\Output\\' + img) / 255
         EM_img = cv2_imread('X:\\BEP_data\\{}\\EM\\Collected\\'.format(dataset) + img)
-        HO_img = cv2_imread('X:\\BEP_data\\{}\\Hoechst\\{}\\'.format(dataset, ('Collected', 'Collected')[Ho_adjust]) + img)
-        masked_img = np.dstack((EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX))) * (1-mask_img),
-                                EM_img * (1- mask_img),
-                                EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)))))
+        HO_img = cv2_imread(
+            'X:\\BEP_data\\{}\\Hoechst\\{}\\'.format(dataset, ('Collected', 'Collected')[Ho_adjust]) + img)
+        masked_img = np.dstack(
+            (EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX))) * (1 - mask_img),
+             EM_img * (1 - mask_img),
+             EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)))))
         # cv2.imshow('{}_{}'.format(Zlevel, img), masked_img/255)
         # cv2.waitKey()
         # cv2.destroyAllWindows()
         cv2.imwrite('X:\\BEP_data\\Predict_set\\EM_overlay\\' + 'em_overlay_' + img, masked_img)
 
-
         if glob('X:\\BEP_data\\{}\\Manual Masks\\'.format(dataset) + img) != []:
-
             man_mask_img = cv2_imread('X:\\BEP_data\\{}\\Manual Masks\\'.format(dataset) + img)
-            overl_img = mask_img * man_mask_img/255
+            overl_img = mask_img * man_mask_img / 255
             overl_img = np.multiply(overl_img, 255.0)
 
-            mask_overlap = np.dstack((man_mask_img, overl_img.astype(np.uint8), np.multiply(mask_img, 255.0).astype(np.uint8)))
-            cv2.imwrite('X:\\BEP_data\\Predict_set\\Mask_overlaps\\'+ 'overlap_' + img, mask_overlap)
+            mask_overlap = np.dstack(
+                (man_mask_img, overl_img.astype(np.uint8), np.multiply(mask_img, 255.0).astype(np.uint8)))
+            cv2.imwrite('X:\\BEP_data\\Predict_set\\Mask_overlaps\\' + 'overlap_' + img, mask_overlap)
 
-
-    backup_predicts('X:\\BEP_data\\Predict_set', 'X:\\BEP_data\\Predict_backups\\{}'.format(model_name+'_'+today.strftime("%Y-%m-%d_%H-%M-%S")))
-
+    backup_predicts('X:\\BEP_data\\Predict_set',
+                    'X:\\BEP_data\\Predict_backups\\{}'.format(model_name + '_' + today.strftime("%Y-%m-%d_%H-%M-%S")))
