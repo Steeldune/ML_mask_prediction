@@ -1,16 +1,26 @@
 import numpy as np
 import tensorflow as tf
 
-x = tf.Variable(tf.random.uniform([3, 3, 2], -1, 1))
-y = tf.Variable(tf.random.uniform([3, 3, 2], -1, 1))
+x = tf.Variable(tf.random.uniform([1, 5, 5, 1], -1, 1))
+y = tf.Variable(tf.random.uniform([1, 5, 5, 3], -1, 1))
 
-def dice_coeff(y_true, y_pred):
-    smooth = 1.
-    # Flatten
-    tflist = tf.unstack(y_pred, axis=2)
-    return tflist
+def apply_weights(y_true, y_pred):
+    y0, y1, y2 = tf.split(y_true, [1, 1, 1], 3)
+    y_pred_weighted = tf.multiply(y_pred, y1)
+    return y_pred_weighted
 
 
-print(dice_coeff(x,y))
-print('split')
-print(y)
+print('Here comes x')
+tf.print(x)
+tf.print(tf.shape(x))
+print('Here comes y')
+tf.print(y)
+tf.print(tf.shape(y))
+print('Here comes y unstacked')
+y1 = splittf(y, x)
+tf.print(y1)
+tf.print(tf.shape(y1))
+z = tf.multiply(x, y1)
+print('Here comes the multipliication')
+tf.print(z)
+tf.print(tf.shape(z))

@@ -12,11 +12,14 @@ from glob import glob
 from start_over import add_threshold
 
 # pragma warning(disable:4996)
-from PIL import Image
-from tqdm import tqdm
 
 import cv2
 
+def apply_weights(y_true, y_pred):
+    y0, y1, y2 = tf.split(y_true, [1, 1, 1], 3)
+    y_pred_weighted = tf.multiply(y_pred, y1)
+    y_true_weighted = tf.multiply(y_true, y1)
+    return y_pred_weighted
 
 def dice_coeff(y_true, y_pred):
     """
@@ -52,7 +55,16 @@ def bce_dice_loss(y_true, y_pred):
     :param y_pred: The predicted image from the network
     :return: bce dice loss score
     """
+
     loss = tf.keras.losses.binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
+
+    return loss
+
+def bce_dice_loss_weighted(y_true, y_pred):
+
+    y_pred_weigted = apply_weights(y_true, y_pred)
+    loss = tf.keras.losses.binary_crossentropy(y_true, y_pred_weigted) + dice_loss(y_true, y_pred_weigted)
+
     return loss
 
 
@@ -121,7 +133,8 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
         vertical_flip=True,
         fill_mode='reflect'
     )
-    """Training data is augmented by flipping, rotating and shifting the image. Any part of the image that has no data will be filled with reflected data."""
+    """Training data is augmented by flipping, rotating and shifting the image. 
+    Any part of the image that has no data will be filled with reflected data."""
 
     test_gen_args = dict(
         samplewise_std_normalization=normalize,
@@ -236,7 +249,7 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     outputs = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(c9)
 
     model = tf.keras.Model(inputs=[input1], outputs=[outputs])
-    model.compile(optimizer='adam', loss=[bce_dice_loss], metrics=[dice_loss])
+    model.compile(optimizer='adam', loss=([bce_dice_loss], [bce_dice_loss_weighted])[using_weights], metrics=[dice_loss])
     model.summary()
 
     ####################################################################################################################
@@ -306,7 +319,7 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
 
 if __name__ == '__main__':
     new_time = time.asctime()
-    model_name = 'sup_base_emho'
+    model_name = 'sup_base_emho_test'
     today = datetime.datetime.now()
 
     scandirs('X:\\BEP_data\\Predict_set')
@@ -314,7 +327,7 @@ if __name__ == '__main__':
     dataset = 'RL015'
     glob_str = 'blob*'
     Ho_adjust = False
-    # Train_Model(ini_data_path, 'Models\\{}'.format('sup_base_emho'), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, normalize=False)
+    Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, normalize=False)
     # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
@@ -341,7 +354,7 @@ if __name__ == '__main__':
         img = img1.split('\\')[-1]
         mask_img = cv2_imread('X:\\BEP_data\\Predict_set\\Output\\' + img) / 255
         EM_img = cv2_imread('X:\\BEP_data\\{}\\EM\\Collected\\'.format(dataset) + img)
-        HO_img = cv2_imread('X:\\BEP_data\\{}\\Hoechst\\{}\\'.format(dataset, ('Collected', 'Collected_thresh')[Ho_adjust]) + img)
+        HO_img = cv2_imread('X:\\BEP_data\\{}\\Hoechst\\{}\\'.format(dataset, ('Collected', 'Collected')[Ho_adjust]) + img)
         masked_img = np.dstack((EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX))) * (1-mask_img),
                                 EM_img * (1- mask_img),
                                 EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)))))
