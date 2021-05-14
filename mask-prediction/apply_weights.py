@@ -20,11 +20,15 @@ def blanket_weights(mask, c, img_size=1024):
 
 def get_radius_sample(mask_directory):
 
-    glob(mask_directory)
+    img_list = glob(mask_directory + '*.png')
+
+    rad_avg = 4
 
     return rad_avg
 
 if __name__ == '__main__':
-    ini_address = 'X:\\BEP_Project\\old_model_results\\'
-    test_mask = cv2.imread(ini_address + '1_1_3.png', cv2.IMREAD_GRAYSCALE)
-    test_mask_weighted = blanket_weights(test_mask, 0)
+    mask_list = glob('X:\\BEP_data\\Train_set\\Train_masks\\1\\*.png')
+    for img in mask_list:
+        mask = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+        mask_expanded = blanket_weights(mask, 255)
+        cv2.imwrite('X:\\BEP_data\\Train_set\\Train_masks\\2\\' + img.split('\\')[-1], mask_expanded)

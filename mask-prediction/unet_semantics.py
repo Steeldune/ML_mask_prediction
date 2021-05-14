@@ -19,7 +19,7 @@ def apply_weights(y_true, y_pred):
     y0, y1, y2 = tf.split(y_true, [1, 1, 1], 3)
     y_pred_weighted = tf.multiply(y_pred, y1)
     y_true_weighted = tf.multiply(y_true, y1)
-    return y_pred_weighted
+    return y_pred_weighted, y_true_weighted
 
 def dice_coeff(y_true, y_pred):
     """
@@ -47,6 +47,16 @@ def dice_loss(y_true, y_pred):
     loss = 1 - dice_coeff(y_true, y_pred)
     return loss
 
+def dice_loss_weighted(y_true, y_pred):
+    y0, y1, y2 = tf.split(y_true, [1, 1, 1], 3)
+    tf.print(tf.shape(y_pred))
+
+    y_pred_weighted = tf.multiply(y_pred, y1)
+    y_true_weighted = tf.multiply(y0, y1)
+
+    loss = dice_loss(y_true_weighted, y_pred_weighted)
+    return loss
+
 
 def bce_dice_loss(y_true, y_pred):
     """
@@ -55,15 +65,18 @@ def bce_dice_loss(y_true, y_pred):
     :param y_pred: The predicted image from the network
     :return: bce dice loss score
     """
-
     loss = tf.keras.losses.binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
 
     return loss
 
 def bce_dice_loss_weighted(y_true, y_pred):
+    y0, y1, y2 = tf.split(y_true, [1, 1, 1], 3)
+    tf.print(tf.shape(y_pred))
 
-    y_pred_weigted = apply_weights(y_true, y_pred)
-    loss = tf.keras.losses.binary_crossentropy(y_true, y_pred_weigted) + dice_loss(y_true, y_pred_weigted)
+    y_pred_weighted = tf.multiply(y_pred, y1)
+    y_true_weighted = tf.multiply(y0, y1)
+
+    loss = tf.keras.losses.binary_crossentropy(y_true_weighted, y_pred_weighted) + dice_loss(y_true_weighted,  y_pred_weighted)
 
     return loss
 
@@ -249,7 +262,7 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     outputs = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(c9)
 
     model = tf.keras.Model(inputs=[input1], outputs=[outputs])
-    model.compile(optimizer='adam', loss=([bce_dice_loss], [bce_dice_loss_weighted])[using_weights], metrics=[dice_loss])
+    model.compile(optimizer='adam', loss=([bce_dice_loss], [bce_dice_loss_weighted])[using_weights], metrics=([dice_loss], [dice_loss_weighted])[using_weights])
     model.summary()
 
     ####################################################################################################################
@@ -319,7 +332,7 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
 
 if __name__ == '__main__':
     new_time = time.asctime()
-    model_name = 'sup_base_emho_test'
+    model_name = 'sup_base_emho_weights'
     today = datetime.datetime.now()
 
     scandirs('X:\\BEP_data\\Predict_set')
@@ -327,7 +340,7 @@ if __name__ == '__main__':
     dataset = 'RL015'
     glob_str = 'blob*'
     Ho_adjust = False
-    Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, normalize=False)
+    Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70, normalize=False, using_weights=True)
     # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
