@@ -3,20 +3,28 @@ import numpy as np
 from glob import glob
 
 
-def blanket_weights(mask, c, img_size=1024):
+def blanket_weights(mask, c, IMG_SIZE=1024):
     """
     Takes a single channel mask image, adds two channels. One filled with c, one filled with zeroes.
     These are images, so values range from 0 to 255 in integer amounts.
     :param mask:    Image that will be affected
     :param c:       Uniform pixel value of the second channel
-    :param img_size:Size of the image in pixels.
+    :param IMG_SIZE:Size of the image in pixels.
     :return:        Mask image with uniform second and third channels.
     """
 
-    new_mask_1 = np.ones((img_size, img_size), dtype=int) * c
-    new_mask_2 = np.zeros((img_size, img_size), dtype=int)
+    new_mask_1 = np.ones((IMG_SIZE, IMG_SIZE), dtype=int) * c
+    new_mask_2 = np.zeros((IMG_SIZE, IMG_SIZE), dtype=int)
     new_mask = np.dstack([mask, new_mask_1, new_mask_2])
     return new_mask
+
+
+def sample_points(pts_array, ratio):
+    rng = np.random.default_rng()
+    list_len = len(pts_array)
+    sample_size = int(ratio*list_len)
+    sample_array = rng.choice(pts_array, sample_size, replace=False, axis=0)
+    return sample_array
 
 
 def get_cluster_center(in_list):
@@ -42,11 +50,12 @@ def get_radius_sample(mask_directory):
 
 def get_annotated_control_points(image):
     contours, hierarchy = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours_thresh = [cnt for cnt in contours if cv2.contourArea(cnt) > 100]
 
-    mass_centres = np.zeros((len(contours), 2), dtype=int)
+    mass_centres = np.zeros((len(contours_thresh), 2), dtype=int)
 
-    for i in range(0, len(contours)):
-        M = cv2.moments(contours[i], 0)
+    for i in range(0, len(contours_thresh)):
+        M = cv2.moments(contours_thresh[i], 0)
         mass_centres[i, 0] = (int(M['m10'] / M['m00']))
         mass_centres[i, 1] = (int(M['m01'] / M['m00']))
 
@@ -55,17 +64,18 @@ def get_annotated_control_points(image):
     return mass_centres
 
 
-def add_circles(ctrl_points, diameter):
-    ret_img = np.zeros((1024, 1024), dtype=int)
+def add_circles(ctrl_points, diameter, ret_img=None, IMG_SIZE=1024):
+    if ret_img is None:
+        ret_img = np.zeros((IMG_SIZE, IMG_SIZE), dtype=int)
     for pnt in ctrl_points:
         cv2.circle(ret_img, pnt, diameter, 255, thickness=-1)
     return ret_img
 
 
-def add_gauss(image, ctrl_points, diameter):
-    x = np.linspace(0, 1023, 1024, dtype=int)
+def add_gauss(image, ctrl_points, diameter, IMG_SIZE=1024):
+    x = np.linspace(0, IMG_SIZE - 1, IMG_SIZE, dtype=int)
     xv, yv = np.meshgrid(x, x)
-    out_image = np.zeros((1024, 1024))
+    out_image = np.zeros((IMG_SIZE, IMG_SIZE))
     for pnt in ctrl_points:
         xv_dist = np.abs(xv - pnt[0])
         yv_dist = np.abs(yv - pnt[1])
@@ -79,19 +89,50 @@ def add_gauss(image, ctrl_points, diameter):
     return out_image
 
 
+def gen_mask_with_weights(mask, ini_weight, diameter, IMG_SIZE=1024, pnt_ratio=1.0):
+    mask_img = cv2.imread(mask, cv2.IMREAD_GRAYSCALE)
+    if type(ini_weight) is str:
+        ini_weight_img = cv2.imread(ini_weight, cv2.IMREAD_GRAYSCALE)
+    else:
+        ini_weight_img = ini_weight
+    ctrl_pnts = get_annotated_control_points(mask_img)
+
+    if pnt_ratio < 0.99:
+        ctrl_pnts = sample_points(ctrl_pnts, pnt_ratio)
+
+    weights_img = add_circles(ctrl_pnts, diameter*2)
+    gauss_img = add_gauss(mask_img, ctrl_pnts, diameter)
+    weights_img_2 = add_circles(ctrl_pnts, diameter)
+    final_img = np.dstack([gauss_img, weights_img, weights_img_2])
+    return final_img
+
+
+def convert_partial_annotation(file_address, export_address, diameter, IMG_SIZE=1024):
+    mask_list = glob(file_address + '\\*.png')
+    for img in mask_list:
+        img_name = img.split('\\')[-1]
+        mask_img = gen_mask_with_weights(img, np.zeros((IMG_SIZE, IMG_SIZE), dtype=int), diameter, IMG_SIZE=IMG_SIZE, pnt_ratio=.3)
+        cv2.imwrite('{}\\{}'.format(export_address, img_name), mask_img)
+    return mask_list
+
+
+
 if __name__ == '__main__':
+    IMG_SIZE = 1024
+
     # mask_list = glob('X:\\BEP_data\\Train_set\\Train_masks\\1\\*.png')
     # for img in mask_list:
     #     mask = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
     #     mask_expanded = blanket_weights(mask, 255)
     #     cv2.imwrite('X:\\BEP_data\\Train_set\\Train_masks\\2\\' + img.split('\\')[-1], mask_expanded)
     radius_array = get_radius_sample('X:\\BEP_data\\Train_set\\blobs\\1\\')
-    print(np.mean(radius_array, dtype=int))
-    example_img = cv2.imread('X:\\BEP_data\\Train_set\\blobs\\1\\1_3_1_3.png', cv2.IMREAD_GRAYSCALE)
-    ctrl_list = get_annotated_control_points(example_img)
-    example_img_2 = add_circles(ctrl_list, 98)
-    gauss_img = add_gauss(example_img, ctrl_list, 98)
-    final_img = np.dstack([example_img_2, gauss_img, np.zeros((1024, 1024), dtype=int)])
-    cv2.imshow('final', final_img / 255)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
+    mean_diam = np.mean(radius_array, dtype=int)
+    print(mean_diam)
+
+    print(convert_partial_annotation('X:\\BEP_data\\Train_set\\blobs\\1', 'X:\\BEP_data\\Partial Annotation\\RL012', 100))
+
+    # ex_img = gen_mask_with_weights('X:\\BEP_data\\Train_set\\blobs\\1\\1_3_1_3.png', np.zeros((1024, 1024), dtype=int),
+    #                                mean_diam)
+    # cv2.imshow('final', ex_img / 255)
+    # cv2.waitKey()
+    # cv2.destroyAllWindows()

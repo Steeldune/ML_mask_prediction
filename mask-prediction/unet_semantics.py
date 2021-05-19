@@ -87,6 +87,22 @@ def bce_dice_loss_weighted(y_true, y_pred):
 
     return loss
 
+def MSE_loss_weighted(y_true, y_pred):
+    y_amplify, y_weights, y_mask = tf.split(y_true, [1, 1, 1], 3)
+    # tf.print(y_mask)
+
+    y_amplify = tf.add(tf.multiply(y_amplify, 9), 1)
+
+    y_pred_weighted = tf.multiply(y_pred, y_weights)
+    y_true_weighted = tf.multiply(y_mask, y_weights)
+    relevant_pixels = tf.reduce_sum(y_weights)
+
+    loss_img_1 = tf.square(tf.subtract(y_pred_weighted, y_true_weighted))
+    loss_img_2 = tf.multiply(y_amplify, loss_img_1)
+    loss = tf.divide(tf.reduce_sum(loss_img_2), relevant_pixels)
+
+    return loss
+
 
 def cv2_imread(file_path):
     """
@@ -271,8 +287,8 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     outputs = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(c9)
 
     model = tf.keras.Model(inputs=[input1], outputs=[outputs])
-    model.compile(optimizer='adam', loss=([bce_dice_loss], [bce_dice_loss_weighted])[using_weights],
-                  metrics=([dice_loss], [dice_loss_weighted])[using_weights])
+    model.compile(optimizer='adam', loss=([bce_dice_loss], [MSE_loss_weighted])[using_weights],
+                  metrics=([dice_loss], [MSE_loss_weighted])[using_weights])
     model.summary()
 
     ####################################################################################################################
@@ -342,17 +358,17 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
 
 if __name__ == '__main__':
     new_time = time.asctime()
-    model_name = 'sup_base_emho_weights'
+    model_name = 'sup_base_emho_weights_3'
     today = datetime.datetime.now()
 
     scandirs('X:\\BEP_data\\Predict_set')
     ini_data_path = 'X:\\BEP_data\\'
-    dataset = 'RL015'
-    glob_str = 'blob*'
+    dataset = 'RL012'
+    glob_str = '1_*.png'
     Ho_adjust = False
     Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=70,
                 normalize=False, using_weights=True)
-    # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
+    # # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
     Use_Model('Models\\{}'.format(model_name), ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False,
