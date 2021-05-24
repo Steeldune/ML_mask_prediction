@@ -48,9 +48,8 @@ def get_radius_sample(mask_directory):
     return np.array(diameters)
 
 
-def get_annotated_control_points(image, thresh=False):
-    if thresh:
-        ret, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+def get_annotated_control_points(image):
+    ret, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     contours, hierarchy = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours_thresh = [cnt for cnt in contours if cv2.contourArea(cnt) > 100]
 
@@ -100,7 +99,7 @@ def gen_mask_with_weights(mask, ini_weight, diameter, IMG_SIZE=1024, pnt_ratio=1
         ini_weight_img = cv2.imread(ini_weight, cv2.IMREAD_GRAYSCALE)
     else:
         ini_weight_img = ini_weight
-    ctrl_pnts = get_annotated_control_points(mask_img, thresh=thresh)
+    ctrl_pnts = get_annotated_control_points(mask_img)
 
     if pnt_ratio < 0.99:
         ctrl_pnts = sample_points(ctrl_pnts, pnt_ratio)
@@ -112,17 +111,16 @@ def gen_mask_with_weights(mask, ini_weight, diameter, IMG_SIZE=1024, pnt_ratio=1
     return final_img
 
 
-def convert_partial_annotation(file_address, export_address, diameter, IMG_SIZE=1024, thresh=False, filter_zero=False):
+def convert_partial_annotation(file_address, export_address, diameter, IMG_SIZE=1024, thresh=False, size_filter=-1, pnt_ratio=1.0):
     mask_list = glob(file_address + '\\*.png')
+    ex_mask_list = []
     for img in mask_list:
         img_name = img.split('\\')[-1]
-        mask_img = gen_mask_with_weights(img, np.zeros((IMG_SIZE, IMG_SIZE), dtype=int), diameter, IMG_SIZE=IMG_SIZE, pnt_ratio=.8, thresh=thresh)
-        if filter_zero:
-            if np.sum(mask_img) > 50000000:
-                cv2.imwrite('{}\\{}'.format(export_address, img_name), mask_img)
-        else:
+        mask_img = gen_mask_with_weights(img, np.zeros((IMG_SIZE, IMG_SIZE), dtype=int), diameter, IMG_SIZE=IMG_SIZE, pnt_ratio=pnt_ratio)
+        if np.sum(mask_img) > size_filter:
             cv2.imwrite('{}\\{}'.format(export_address, img_name), mask_img)
-    return mask_list
+            ex_mask_list.append('{}\\{}'.format(export_address, img_name))
+    return ex_mask_list
 
 
 
@@ -138,7 +136,7 @@ if __name__ == '__main__':
     mean_diam = np.mean(radius_array, dtype=int)
     print(mean_diam)
 
-    print(convert_partial_annotation('X:\\BEP_data\\Train_set\\blobs\\2', 'X:\\BEP_data\\Partial Annotation\\RL012\\pred_hoechst', 90, thresh=True, filter_zero=True))
+    print(convert_partial_annotation('X:\\BEP_data\\Train_set\\blobs\\2', 'X:\\BEP_data\\Partial Annotation\\RL012\\pred_hoechst', 90, size_filter=500000, pnt_ratio=.8))
 
     # ex_img = gen_mask_with_weights('X:\\BEP_data\\Train_set\\blobs\\1\\1_3_1_3.png', np.zeros((1024, 1024), dtype=int),
     #                                mean_diam)

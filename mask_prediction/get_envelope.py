@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import os
-from data_retrievals import cv2_imread
+from .data_retrievals import cv2_imread
 
 
 def read_img_string(img_str):

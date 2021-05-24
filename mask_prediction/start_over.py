@@ -1,16 +1,12 @@
 import numpy as np
-import numpy.linalg
 import skimage
 import cv2
-import matplotlib.pyplot as plt
 from skimage.filters.rank import entropy
 from skimage.morphology import disk
 from sklearn.cluster import OPTICS, cluster_optics_dbscan, AgglomerativeClustering, KMeans
 from collections import Counter
 import tqdm
-import data_retrievals
 from glob import glob
-from compare_images import output_IOU
 
 
 def get_path(img_str, Zlevel=1, type='EM'):

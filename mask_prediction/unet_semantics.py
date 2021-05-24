@@ -6,10 +6,9 @@ import os
 import shutil
 import errno
 
-# from tensorflow.keras.preprocessing import image_dataset_from_directory
 import time
 from glob import glob
-from start_over import add_threshold
+from .start_over import add_threshold
 
 # pragma warning(disable:4996)
 
@@ -140,7 +139,7 @@ def backup_predicts(path, dest):
 
 
 def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
-                IMG_CHANNELS=3, BATCH_SIZE=8, patience=100, normalize=False, using_weights=False):
+                IMG_CHANNELS=3, BATCH_SIZE=8, patience=100, normalize=False, using_weights=False, train_size=50, test_size=8):
     """
     This is the training function, which compiles a network, and uses the data given to train a model.
     :param ini_data_path:   Address where the following files have to be found:
@@ -299,8 +298,8 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     callbacks = [tf.keras.callbacks.EarlyStopping(patience=patience),
                  tf.keras.callbacks.TensorBoard(log_dir='logs', histogram_freq=1)]
 
-    results = model.fit(train_generator, validation_data=test_generator, steps_per_epoch=78 // BATCH_SIZE,
-                        validation_steps=8 // BATCH_SIZE,
+    results = model.fit(train_generator, validation_data=test_generator, steps_per_epoch=train_size // BATCH_SIZE,
+                        validation_steps=test_size // BATCH_SIZE,
                         epochs=1000, callbacks=callbacks, batch_size=BATCH_SIZE)
     model.save(model_export + '.h5', include_optimizer=False)
     print('Done! Model can be found in ' + model_export)
@@ -392,6 +391,7 @@ def backup_data(ini_data_path, dataset, glob_str, model_name, predict_set, predi
                 (man_mask_img, overl_img.astype(np.uint8), np.multiply(mask_img, 255.0).astype(np.uint8)))
             cv2.imwrite(predict_set + '\\Mask_overlaps\\' + 'overlap_' + img, mask_overlap)
 
+    today = datetime.datetime.now()
     backup_predicts(predict_set,
                     predict_backup + '\\{}'.format(model_name + '_' + today.strftime("%Y-%m-%d_%H-%M-%S")))
 
@@ -399,15 +399,14 @@ def backup_data(ini_data_path, dataset, glob_str, model_name, predict_set, predi
 if __name__ == '__main__':
     new_time = time.asctime()
     model_name = 'qu_base_em_predho'
-    today = datetime.datetime.now()
 
     scandirs('X:\\BEP_data\\Predict_set')
     ini_data_path = 'X:\\BEP_data\\'
     dataset = 'RL010'
     glob_str = '*.png'
     Ho_adjust = False
-    # Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=50,
-    #             normalize=False, using_weights=True)
+    Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=50,
+                normalize=False, using_weights=True, train_size=78, test_size=7)
     # # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
