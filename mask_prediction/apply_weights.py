@@ -110,7 +110,6 @@ def gen_mask_with_weights(mask, ini_weight, diameter, IMG_SIZE=1024, pnt_ratio=1
     final_img = np.dstack([gauss_img, weights_img, weights_img_2])
     return final_img
 
-
 def convert_partial_annotation(file_address, export_address, diameter, IMG_SIZE=1024, thresh=False, size_filter=-1, pnt_ratio=1.0):
     mask_list = glob(file_address + '\\*.png')
     ex_mask_list = []
@@ -121,6 +120,22 @@ def convert_partial_annotation(file_address, export_address, diameter, IMG_SIZE=
             cv2.imwrite('{}\\{}'.format(export_address, img_name), mask_img)
             ex_mask_list.append('{}\\{}'.format(export_address, img_name))
     return ex_mask_list
+
+
+def background_from_pred(img, area_threshold, IMG_SIZE=1024):
+    _, thresh_low = cv2.threshold(img, int(255*.1), 255, cv2.THRESH_BINARY_INV)
+    _, thresh_high = cv2.threshold(img, int(255*.7), 255, cv2.THRESH_BINARY)
+
+    cnts, _ = cv2.findContours(thresh_high, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+
+    ret_img = np.zeros((IMG_SIZE, IMG_SIZE), np.uint8)
+    ret_img = np.add(ret_img, thresh_low)
+
+    for cnt in cnts:
+        if cv2.contourArea(cnt) > area_threshold:
+            cv2.drawContours(ret_img, [cnt], -1, 255, cv2.FILLED)
+
+    return ret_img
 
 
 
@@ -134,12 +149,12 @@ if __name__ == '__main__':
     #     cv2.imwrite('X:\\BEP_data\\Train_set\\Train_masks\\2\\' + img.split('\\')[-1], mask_expanded)
     radius_array = get_radius_sample('X:\\BEP_data\\Train_set\\blobs\\1\\')
     mean_diam = np.mean(radius_array, dtype=int)
-    print(mean_diam)
 
-    print(convert_partial_annotation('X:\\BEP_data\\Train_set\\blobs\\2', 'X:\\BEP_data\\Partial Annotation\\RL012\\pred_hoechst', 90, size_filter=500000, pnt_ratio=.8))
+    area_threshold = np.pi*mean_diam*mean_diam//2
 
-    # ex_img = gen_mask_with_weights('X:\\BEP_data\\Train_set\\blobs\\1\\1_3_1_3.png', np.zeros((1024, 1024), dtype=int),
-    #                                mean_diam)
-    # cv2.imshow('final', ex_img / 255)
-    # cv2.waitKey()
-    # cv2.destroyAllWindows()
+    for img_str in glob('X:\\BEP_data\\Predict_backups\\qu_base_em_predho_test_2021-05-25_15-10-56\\Output\\*.png'):
+        ex_img = cv2.imread(img_str, cv2.IMREAD_GRAYSCALE)
+        ex_img_back = background_from_pred(ex_img, area_threshold)
+        cv2.imshow('{}'.format(img_str), ex_img_back)
+        cv2.waitKey()
+        cv2.destroyAllWindows()

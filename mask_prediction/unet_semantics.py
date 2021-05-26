@@ -8,7 +8,6 @@ import errno
 
 import time
 from glob import glob
-from .start_over import add_threshold
 
 # pragma warning(disable:4996)
 
@@ -90,7 +89,7 @@ def MSE_loss_weighted(y_true, y_pred):
     y_mask, y_weights, y_amplify = tf.split(y_true, [1, 1, 1], 3)
     # tf.print(y_mask)
 
-    # y_amplify = tf.add(tf.multiply(y_amplify, 15.0), 1.0)
+    y_amplify = tf.add(tf.multiply(y_amplify, 15.0), 1.0)
 
     y_pred_weighted = tf.multiply(y_pred, y_weights)
     y_true_weighted = tf.multiply(y_mask, y_weights)
@@ -100,7 +99,7 @@ def MSE_loss_weighted(y_true, y_pred):
 
     loss_img_1 = tf.square(tf.subtract(y_pred_weighted, y_true_weighted))
     loss_img_2 = tf.multiply(y_amplify, loss_img_1)
-    loss = tf.divide(tf.reduce_sum(loss_img_1), relevant_pixels)
+    loss = tf.divide(tf.reduce_sum(loss_img_2), relevant_pixels)
 
     return loss
 
@@ -138,8 +137,8 @@ def backup_predicts(path, dest):
             raise
 
 
-def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
-                IMG_CHANNELS=3, BATCH_SIZE=8, patience=100, normalize=False, using_weights=False, train_size=50, test_size=8):
+def Train_Model(ini_data_path, IMG_WIDTH=1024, IMG_HEIGHT=1024,
+                IMG_CHANNELS=3, normalize=False, using_weights=False):
     """
     This is the training function, which compiles a network, and uses the data given to train a model.
     :param ini_data_path:   Address where the following files have to be found:
@@ -288,26 +287,12 @@ def Train_Model(ini_data_path, model_export, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     outputs = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(c9)
 
     model = tf.keras.Model(inputs=[input1], outputs=[outputs])
-    model.compile(optimizer='adam', loss=([bce_dice_loss], [MSE_loss_weighted])[using_weights],
-                  metrics=([dice_loss], [bce_dice_loss_weighted])[using_weights])
-    model.summary()
 
-    ####################################################################################################################
-
-    checkpointer = tf.keras.callbacks.ModelCheckpoint('{}.h5'.format('10jan1058'), verbose=1, save_best_only=True)
-    callbacks = [tf.keras.callbacks.EarlyStopping(patience=patience),
-                 tf.keras.callbacks.TensorBoard(log_dir='logs', histogram_freq=1)]
-
-    results = model.fit(train_generator, validation_data=test_generator, steps_per_epoch=train_size // BATCH_SIZE,
-                        validation_steps=test_size // BATCH_SIZE,
-                        epochs=1000, callbacks=callbacks, batch_size=BATCH_SIZE)
-    model.save(model_export + '.h5', include_optimizer=False)
-    print('Done! Model can be found in ' + model_export)
-    return True
+    return model, train_generator, test_generator
 
 
 def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_data\\Predict_set\\', only_EM=False,
-              HO_adjust=False, normalize=False):
+               normalize=False):
     """
     This function loads a model that has been made, and saves predictions from the data it has been given. Supply it
     with a folder and a filter for the images to predict on, and you're golden. Input data will be pulled
@@ -335,8 +320,6 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
             HO_img = cv2_imread(data_path + dataset + '\\Hoechst\\Collected\\' + img_str)
             if normalize:
                 HO_img = cv2.normalize(HO_img, None, 255, 0, cv2.NORM_INF)
-            if HO_adjust:
-                HO_img = add_threshold(HO_img, 701, -50)
             out_img = np.dstack((EM_img, HO_img, np.zeros((1024, 1024), np.uint8)))
         cv2.imwrite(export_path + 'Input\\1\\' + img_str, out_img)
 
@@ -398,19 +381,48 @@ def backup_data(ini_data_path, dataset, glob_str, model_name, predict_set, predi
 
 if __name__ == '__main__':
     new_time = time.asctime()
-    model_name = 'qu_base_em_predho'
+    model_name = 'qu_base_em_predho_test'
 
     scandirs('X:\\BEP_data\\Predict_set')
     ini_data_path = 'X:\\BEP_data\\'
     dataset = 'RL010'
     glob_str = '*.png'
     Ho_adjust = False
-    Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=50,
-                normalize=False, using_weights=True, train_size=78, test_size=7)
+    using_weights=True
+    model_export = 'Models\\{}'.format(model_name)
+    BATCH_SIZE=4
+    patience=50
+
+    ####################################################################################################################
+
+    train_size = len(os.listdir('X:\\BEP_data\\Train_set\\Train_masks\\1'))
+    test_size = len(os.listdir('X:\\BEP_data\\Test_set\\Test_masks\\1'))
+
+    model, train_generator, test_generator = Train_Model(ini_data_path, model_export, IMG_CHANNELS=3, BATCH_SIZE=4, patience=50,
+                        normalize=False, using_weights=using_weights, train_size=78, test_size=7)
+
+    model.compile(optimizer='adam', loss=([bce_dice_loss], [MSE_loss_weighted])[using_weights],
+                      metrics=([dice_loss], [bce_dice_loss_weighted])[using_weights])
+
+    checkpointer = tf.keras.callbacks.ModelCheckpoint('{}.h5'.format('10jan1058'), verbose=1, save_best_only=True)
+    callbacks = [tf.keras.callbacks.EarlyStopping(patience=patience),
+                 tf.keras.callbacks.TensorBoard(log_dir='logs', histogram_freq=1)]
+
+    results = model.fit(train_generator, validation_data=test_generator, steps_per_epoch=train_size // BATCH_SIZE,
+                        validation_steps=test_size // BATCH_SIZE,
+                        epochs=1000, callbacks=callbacks, batch_size=BATCH_SIZE)
+    model.save(model_export + '.h5', include_optimizer=False)
+    print('Done! Model can be found in ' + model_export)
+
+
+
+
+    # Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=50,
+    #             normalize=False, using_weights=True, train_size=78, test_size=7)
     # # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
     #
 
-    Use_Model('Models\\{}'.format(model_name), ini_data_path, glob_str, dataset, HO_adjust=Ho_adjust, only_EM=False,
+    Use_Model('Models\\{}'.format(model_name), ini_data_path, glob_str, dataset, only_EM=False,
               normalize=True)
 
     backup_data(ini_data_path, dataset, glob_str, model_name, 'X:\\BEP_data\\Predict_set', 'X:\\BEP_data\\Predict_backups')
