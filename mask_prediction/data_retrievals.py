@@ -8,7 +8,7 @@ def cv2_imread(file_path):
     return cv_img
 
 
-def gen_input_from_mask(data_path, work_with_fm=True, adjust_test=False, dataset='RL012', normalize=False):
+def gen_input_from_mask(data_paths, work_with_fm=True, adjust_test=False, normalize=False):
     """
     From a list of manual mask images, this function collects all the data, and assembles them in either
     the train_set or test_set file structures. The input data is made so that EM data occupies the blue channel and
@@ -21,14 +21,17 @@ def gen_input_from_mask(data_path, work_with_fm=True, adjust_test=False, dataset
     :param normalize:   Boolean on whether the secondary data will be normalized.
     :return:            True
     """
-    file_list = os.listdir(data_path + ('Train_set\\Train_masks\\1\\', 'Test_set\\Test_masks\\1\\')[adjust_test])
-    export_path = data_path + ('Train_set\\Train_data\\1\\', 'Test_set\\Test_data\\1\\')[adjust_test]
+
+    train_path, test_path, em_path, ho_path, mask_folder = data_paths
+
+    file_list = os.listdir((train_path, test_path)[adjust_test] + ('\\Train_masks\\1\\', '\\Test_masks\\1\\')[adjust_test])
+    export_path = (train_path, test_path)[adjust_test] + ('\\Train_data\\1\\', '\\Test_data\\1\\')[adjust_test]
     export_list = []
     for img_string in file_list:
-        EM_path = data_path + '{}\\EM\\Collected\\{}'.format(dataset, img_string)
+        EM_path = em_path + '\\Collected\\{}'.format(img_string)
         EM_img = cv2_imread(EM_path)
         if work_with_fm:
-            HO_path = data_path + ('{}\\Hoechst\\Collected\\{}'.format(dataset, img_string))
+            HO_path = ho_path + ('\\Collected\\{}'.format(img_string))
             HO_img = cv2_imread(HO_path)
             if normalize:
                 HO_img = cv2.normalize(HO_img, None, 255, 0, cv2.NORM_INF)
@@ -41,6 +44,6 @@ def gen_input_from_mask(data_path, work_with_fm=True, adjust_test=False, dataset
 
 
 if __name__ == '__main__':
-    gen_input_from_mask('X:\\BEP_data\\', work_with_fm=True, adjust_test=True, dataset='RL012', normalize=True)
+    gen_input_from_mask('X:\\BEP_data\\', work_with_fm=True, adjust_test=True, normalize=True)
 
 """I might revisit the idea of various data retrievals later, but this function seems to do."""

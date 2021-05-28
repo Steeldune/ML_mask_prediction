@@ -339,7 +339,9 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
     """Once the prediction has been made, it is written as a png in the predict_set folder."""
     return True
 
-def backup_data(ini_data_path, dataset, glob_str, model_name, predict_set, predict_backup, ho_adjust=False):
+def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, img_strs=None):
+
+    train_folder, test_folder, em_folder, ho_folder, mask_folder = data_paths
 
     """Beneath is some data processing code which takes predictions and does two things:
         It makes an EM overlay image, where the EM, the secondary data and the prediction can be seen
@@ -352,21 +354,22 @@ def backup_data(ini_data_path, dataset, glob_str, model_name, predict_set, predi
         Black and white are true negative and true positive respectively.
     Finally, the images are stored in a backup location named after the model that was used, and the time it was invoked.
     """
+    if img_strs is None:
+        img_strs = glob(em_folder + '\\Collected\\{}'.format(glob_str))
 
-    img_strs = glob(ini_data_path + '{}\\EM\\Collected\\{}'.format(dataset, glob_str))
     for img1 in img_strs:
         img = img1.split('\\')[-1]
         mask_img = cv2_imread(predict_set + '\\Output\\' + img) / 255
-        EM_img = cv2_imread(ini_data_path + '{}\\EM\\Collected\\'.format(dataset) + img)
-        HO_img = cv2_imread(ini_data_path + '{}\\Hoechst\\{}\\'.format(dataset, 'Collected') + img)
+        EM_img = cv2_imread(em_folder + '\\Collected\\' + img)
+        HO_img = cv2_imread(ho_folder + '\\Collected\\' + img)
         masked_img = np.dstack(
             (EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX))) * (1 - mask_img),
              EM_img * (1 - mask_img),
              EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)))))
         cv2.imwrite(predict_set + '\\EM_overlay\\' + 'em_overlay_' + img, masked_img)
 
-        if glob(ini_data_path + '{}\\Manual Masks\\'.format(dataset) + img) != []:
-            man_mask_img = cv2_imread(ini_data_path + '{}\\Manual Masks\\'.format(dataset) + img)
+        if glob(mask_folder + img) != []:
+            man_mask_img = cv2_imread(mask_folder + img)
             overl_img = mask_img * man_mask_img / 255
             overl_img = np.multiply(overl_img, 255.0)
 

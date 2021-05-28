@@ -1,4 +1,5 @@
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 from glob import glob
 
@@ -42,7 +43,7 @@ def get_radius_sample(mask_directory):
         contours, hierarchy = cv2.findContours(img_read, 1, 2)
         bounds = [cv2.boundingRect(cnt) for cnt in contours]
         for bound in bounds:
-            if bound[3] + bound[2] >= 20:
+            if bound[3] + bound[2] >= 50 and bound[3] + bound[2] <= 500:
                 diameters.append((bound[3] + bound[2]) // 2)
 
     return np.array(diameters)
@@ -110,8 +111,8 @@ def gen_mask_with_weights(mask, ini_weight, diameter, IMG_SIZE=1024, pnt_ratio=1
     final_img = np.dstack([gauss_img, weights_img, weights_img_2])
     return final_img
 
-def convert_partial_annotation(file_address, export_address, diameter, IMG_SIZE=1024, thresh=False, size_filter=-1, pnt_ratio=1.0):
-    mask_list = glob(file_address + '\\*.png')
+def convert_partial_annotation(file_address, export_address, diameter, glob_str = '\\*.png', IMG_SIZE=1024, thresh=False, size_filter=-1, pnt_ratio=1.0):
+    mask_list = glob(file_address + glob_str)
     ex_mask_list = []
     for img in mask_list:
         img_name = img.split('\\')[-1]
@@ -147,14 +148,23 @@ if __name__ == '__main__':
     #     mask = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
     #     mask_expanded = blanket_weights(mask, 255)
     #     cv2.imwrite('X:\\BEP_data\\Train_set\\Train_masks\\2\\' + img.split('\\')[-1], mask_expanded)
-    radius_array = get_radius_sample('X:\\BEP_data\\Train_set\\blobs\\1\\')
+    radius_array = get_radius_sample('X:\\BEP_data\\Predict_backups\\sup_base_emho_2021-05-20_08-58-13\\Output\\')
+    radius_array2 = get_radius_sample('X:\\BEP_data\\RL012\\Manual Masks\\')
     mean_diam = np.mean(radius_array, dtype=int)
+    #
+    # area_threshold = np.pi*mean_diam*mean_diam//2
+    #
+    # for img_str in glob('X:\\BEP_data\\Predict_backups\\qu_base_em_predho_test_2021-05-25_15-10-56\\Output\\*.png'):
+    #     ex_img = cv2.imread(img_str, cv2.IMREAD_GRAYSCALE)
+    #     ex_img_back = background_from_pred(ex_img, area_threshold)
+    #     cv2.imshow('{}'.format(img_str), ex_img_back)
+    #     cv2.waitKey()
+    #     cv2.destroyAllWindows()
 
-    area_threshold = np.pi*mean_diam*mean_diam//2
-
-    for img_str in glob('X:\\BEP_data\\Predict_backups\\qu_base_em_predho_test_2021-05-25_15-10-56\\Output\\*.png'):
-        ex_img = cv2.imread(img_str, cv2.IMREAD_GRAYSCALE)
-        ex_img_back = background_from_pred(ex_img, area_threshold)
-        cv2.imshow('{}'.format(img_str), ex_img_back)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
+    plt.subplot(2,1,1)
+    plt.hist(radius_array)
+    plt.title('Network Output')
+    plt.subplot(2,1,2)
+    plt.hist(radius_array2)
+    plt.title('Manual Output')
+    plt.show()
