@@ -75,7 +75,7 @@ def add_circles(ctrl_points, diameter, ret_img=None, IMG_SIZE=1024):
     return ret_img
 
 
-def add_gauss(image, ctrl_points, diameter, IMG_SIZE=1024):
+def add_gauss(ctrl_points, diameter, IMG_SIZE=1024, sigmaScale=2):
     x = np.linspace(0, IMG_SIZE - 1, IMG_SIZE, dtype=int)
     xv, yv = np.meshgrid(x, x)
     out_image = np.zeros((IMG_SIZE, IMG_SIZE))
@@ -87,14 +87,14 @@ def add_gauss(image, ctrl_points, diameter, IMG_SIZE=1024):
         dist_map = (np.power(xv_dist, 2) + np.power(yv_dist, 2))
         dist_map_thresh = dist_map < np.power(diameter // 2, 2)
 
-        gauss_map = np.exp((dist_map * -1) / (diameter * 2)) * 255
+        gauss_map = np.exp((dist_map * -1) / (diameter * sigmaScale)) * 255
 
         out_image = out_image + gauss_map * dist_map_thresh
 
     return out_image
 
 
-def gen_mask_with_weights(mask, ini_weight, diameter, IMG_SIZE=1024, pnt_ratio=1.0, thresh=False):
+def gen_mask_with_weights(mask, ini_weight, diameter, pnt_ratio=1.0, sigma=2):
     mask_img = cv2.imread(mask, cv2.IMREAD_GRAYSCALE)
     if type(ini_weight) is str:
         ini_weight_img = cv2.imread(ini_weight, cv2.IMREAD_GRAYSCALE)
@@ -106,17 +106,17 @@ def gen_mask_with_weights(mask, ini_weight, diameter, IMG_SIZE=1024, pnt_ratio=1
         ctrl_pnts = sample_points(ctrl_pnts, pnt_ratio)
 
     weights_img = add_circles(ctrl_pnts, diameter)
-    gauss_img = add_gauss(mask_img, ctrl_pnts, diameter)
+    gauss_img = add_gauss(ctrl_pnts, diameter, sigmaScale=sigma)
     weights_img_2 = add_circles(ctrl_pnts, diameter//2)
     final_img = np.dstack([gauss_img, weights_img, weights_img_2])
     return final_img
 
-def convert_partial_annotation(file_address, export_address, diameter, glob_str = '\\*.png', IMG_SIZE=1024, thresh=False, size_filter=-1, pnt_ratio=1.0):
+def convert_partial_annotation(file_address, export_address, diameter, glob_str = '\\*.png', IMG_SIZE=1024, size_filter=-1, pnt_ratio=1.0, sigma=2):
     mask_list = glob(file_address + glob_str)
     ex_mask_list = []
     for img in mask_list:
         img_name = img.split('\\')[-1]
-        mask_img = gen_mask_with_weights(img, np.zeros((IMG_SIZE, IMG_SIZE), dtype=int), diameter, IMG_SIZE=IMG_SIZE, pnt_ratio=pnt_ratio)
+        mask_img = gen_mask_with_weights(img, np.zeros((IMG_SIZE, IMG_SIZE), dtype=int), diameter, pnt_ratio=pnt_ratio, sigma=sigma)
         if np.sum(mask_img) > size_filter:
             cv2.imwrite('{}\\{}'.format(export_address, img_name), mask_img)
             ex_mask_list.append('{}\\{}'.format(export_address, img_name))
@@ -150,21 +150,26 @@ if __name__ == '__main__':
     #     cv2.imwrite('X:\\BEP_data\\Train_set\\Train_masks\\2\\' + img.split('\\')[-1], mask_expanded)
     radius_array = get_radius_sample('X:\\BEP_data\\Predict_backups\\sup_base_emho_2021-05-20_08-58-13\\Output\\')
     radius_array2 = get_radius_sample('X:\\BEP_data\\RL012\\Manual Masks\\')
-    mean_diam = np.mean(radius_array, dtype=int)
+    # mean_diam = np.mean(radius_array, dtype=int)
+    mean_diam = 93
+    radius_log = np.log(radius_array)
+    mean_diam2 = int(np.exp(radius_log.mean()))
+    print(mean_diam)
+    print(mean_diam2)
     #
-    # area_threshold = np.pi*mean_diam*mean_diam//2
-    #
-    # for img_str in glob('X:\\BEP_data\\Predict_backups\\qu_base_em_predho_test_2021-05-25_15-10-56\\Output\\*.png'):
-    #     ex_img = cv2.imread(img_str, cv2.IMREAD_GRAYSCALE)
-    #     ex_img_back = background_from_pred(ex_img, area_threshold)
-    #     cv2.imshow('{}'.format(img_str), ex_img_back)
-    #     cv2.waitKey()
-    #     cv2.destroyAllWindows()
+    area_threshold = np.pi*mean_diam*mean_diam//2*4
 
-    plt.subplot(2,1,1)
-    plt.hist(radius_array)
-    plt.title('Network Output')
-    plt.subplot(2,1,2)
-    plt.hist(radius_array2)
-    plt.title('Manual Output')
-    plt.show()
+    for img_str in glob('X:\\BEP_data\\Annotation_Iteration\\Predict_set\\Output\\*.png'):
+        ex_img = cv2.imread(img_str, cv2.IMREAD_GRAYSCALE)
+        ex_img_back = background_from_pred(ex_img, area_threshold)
+        cv2.imshow('{}'.format(img_str), ex_img_back)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
+
+    # plt.subplot(2,1,1)
+    # plt.hist(radius_array)
+    # plt.title('Network Output')
+    # plt.subplot(2,1,2)
+    # plt.hist(radius_array2)
+    # plt.title('Manual Output')
+    # plt.show()

@@ -191,7 +191,7 @@ def Train_Model(ini_data_path, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     seed = 1
 
     image_generator = image_datagen.flow_from_directory(
-        ini_data_path + 'Train_set/Train_data',
+        ini_data_path + 'Train_set/data',
         class_mode=None,
         seed=seed,
         target_size=(1024, 1024),
@@ -201,7 +201,7 @@ def Train_Model(ini_data_path, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     )
 
     mask_generator = mask_datagen.flow_from_directory(
-        ini_data_path + 'Train_set/Train_masks',
+        ini_data_path + 'Train_set/masks',
         class_mode=None,
         seed=seed,
         target_size=(1024, 1024),
@@ -211,7 +211,7 @@ def Train_Model(ini_data_path, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     )
 
     image_test_generator = image_test_datagen.flow_from_directory(
-        ini_data_path + 'Test_set/Test_data',
+        ini_data_path + 'Test_set/data',
         class_mode=None,
         shuffle=False,
         target_size=(1024, 1024),
@@ -219,7 +219,7 @@ def Train_Model(ini_data_path, IMG_WIDTH=1024, IMG_HEIGHT=1024,
         batch_size=1
     )
     mask_test_generator = mask_test_datagen.flow_from_directory(
-        ini_data_path + 'Test_set/Test_masks',
+        ini_data_path + 'Test_set/masks',
         class_mode=None,
         shuffle=False,
         target_size=(1024, 1024),

@@ -24,8 +24,8 @@ def gen_input_from_mask(data_paths, work_with_fm=True, adjust_test=False, normal
 
     train_path, test_path, em_path, ho_path, mask_folder = data_paths
 
-    file_list = os.listdir((train_path, test_path)[adjust_test] + ('\\Train_masks\\1\\', '\\Test_masks\\1\\')[adjust_test])
-    export_path = (train_path, test_path)[adjust_test] + ('\\Train_data\\1\\', '\\Test_data\\1\\')[adjust_test]
+    file_list = os.listdir((train_path, test_path)[adjust_test] + ('\\masks\\1\\', '\\masks\\1\\')[adjust_test])
+    export_path = (train_path, test_path)[adjust_test] + ('\\data\\1\\', '\\data\\1\\')[adjust_test]
     export_list = []
     for img_string in file_list:
         EM_path = em_path + '\\Collected\\{}'.format(img_string)
