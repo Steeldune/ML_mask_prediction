@@ -316,11 +316,13 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
         EM_img = cv2_imread(EM_ad)
         if only_EM:
             out_img = cv2_imread(EM_ad)
-        else:
+        elif os.path.exists(data_path + dataset + '\\Hoechst\\Collected\\' + img_str):
             HO_img = cv2_imread(data_path + dataset + '\\Hoechst\\Collected\\' + img_str)
             if normalize:
                 HO_img = cv2.normalize(HO_img, None, 255, 0, cv2.NORM_INF)
             out_img = np.dstack((EM_img, HO_img, np.zeros((1024, 1024), np.uint8)))
+        else:
+            continue
         cv2.imwrite(export_path + 'Input\\1\\' + img_str, out_img)
 
     model = tf.keras.models.load_model(model_path + '.h5', compile=False)
@@ -334,8 +336,9 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
                                                             color_mode=('rgb', 'grayscale')[only_EM])
 
     output = model.predict(validation_generator)
+    output_names = glob(export_path + 'Input\\1\\*.png')
     for i, pic in enumerate(output):
-        cv2.imwrite(export_path + 'Output\\{}'.format(EM_addresses[i].split('\\')[-1]), pic * 255)
+        cv2.imwrite(export_path + 'Output\\{}'.format(output_names[i].split('\\')[-1]), pic * 255)
     """Once the prediction has been made, it is written as a png in the predict_set folder."""
     return True
 
@@ -359,6 +362,8 @@ def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, i
 
     for img1 in img_strs:
         img = img1.split('\\')[-1]
+        if not os.path.exists(ho_folder + '\\Collected\\' + img):
+            continue
         mask_img = cv2_imread(predict_set + '\\Output\\' + img) / 255
         EM_img = cv2_imread(em_folder + '\\Collected\\' + img)
         HO_img = cv2_imread(ho_folder + '\\Collected\\' + img)
