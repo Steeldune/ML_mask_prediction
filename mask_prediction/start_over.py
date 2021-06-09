@@ -134,7 +134,7 @@ def color_k_means(f_list, cluster_nr=3):
     kmeans = KMeans(n_clusters=cluster_nr, random_state=0).fit(k_means_list)
     labels = kmeans.labels_
     f_list = np.array(f_list)
-    out_img = np.zeros((max(f_list[:, 0]) + 1, max(f_list[:, 1]) + 1), dtype=np.uint8)
+    out_img = np.zeros((1024, 1024), dtype=np.uint8)
     for l, f in zip(labels, f_list):
         out_img[f[0], f[1]] = l + 1
     return out_img
@@ -194,6 +194,10 @@ def get_floodfill(img, coords, margin=3):
         label_list = []
         for x in range(coord_new[0] - margin, coord_new[0] + margin):
             for y in range(coord_new[1] - margin, coord_new[1] + margin):
+                if x > 1023 or x < 0:
+                    continue
+                if y > 1023 or x < 0:
+                    continue
                 label_list.append(img[x, y])
 
         if most_frequent(label_list) == img[coord_new[0], coord_new[1]]:
