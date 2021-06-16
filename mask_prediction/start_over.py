@@ -189,25 +189,27 @@ def gen_voronoi_masks(img, nuclei_pos, resolution=1024, entropy_EM=None, feature
 
 def get_floodfill(img, coords, margin=3):
     label_lists = []
+    if len(coords) == 0:
+        return np.zeros((1024, 1024), dtype=np.uint8)
     for coord in coords:
         coord_new = [int(coord[1]), int(coord[0])]
         label_list = []
         for x in range(coord_new[0] - margin, coord_new[0] + margin):
             for y in range(coord_new[1] - margin, coord_new[1] + margin):
-                if x > 1023 or x < 0:
+                if x >= 1021 or x <= 2:
                     continue
-                if y > 1023 or x < 0:
+                if y >= 1021 or y <= 2:
                     continue
                 label_list.append(img[x, y])
 
-        if most_frequent(label_list) == img[coord_new[0], coord_new[1]]:
-            retval, new_img, mask, rect = cv2.floodFill(img, None, (coord_new[1], coord_new[0]), 0)
-        else:
-            l = label_list.index(most_frequent(label_list))
-            label_x = l % (margin * 2)
-            label_y = l // (margin * 2)
-            retval, new_img, mask, rect = cv2.floodFill(img, None, (
-            (label_x - margin) + coord_new[1], (label_y - margin) + coord_new[0]), 0)
+        # if most_frequent(label_list) == img[coord_new[0], coord_new[1]]:
+        retval, new_img, mask, rect = cv2.floodFill(img, None, (coord_new[1], coord_new[0]), 0)
+        # else:
+        #     l = label_list.index(most_frequent(label_list))
+        #     label_x = l % (margin * 2)
+        #     label_y = l // (margin * 2)
+        #     retval, new_img, mask, rect = cv2.floodFill(img, None, (
+        #     (label_x - margin) + coord_new[1], (label_y - margin) + coord_new[0]), 0)
     return new_img
 
 

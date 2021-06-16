@@ -22,11 +22,11 @@ def output_IOU(file_ground, file_pred):
     for img_str in tqdm(imgs_list):
         ground_img = cv2.imread(file_ground + '\\' + img_str)
         ground_img = cv2.cvtColor(ground_img, cv2.COLOR_BGR2GRAY)
-        _, ground_img = cv2.threshold(ground_img, 10, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, ground_img = cv2.threshold(ground_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
         pred_img = cv2.imread(file_pred + '\\' + img_str)
         pred_img = cv2.cvtColor(pred_img, cv2.COLOR_BGR2GRAY)
-        _, pred_img = cv2.threshold(pred_img, 10, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, pred_img = cv2.threshold(pred_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         pred_img = cv2.morphologyEx(pred_img, cv2.MORPH_CLOSE, disk(5))
 
         intersect_img = cv2.bitwise_and(pred_img, ground_img)
@@ -41,11 +41,12 @@ def output_IOU(file_ground, file_pred):
 
 
 if __name__ == '__main__':
-    dataset = 'RL010'
+    dataset = 'RL012'
 
     pred_iou_dict, pred_pearson_dict = output_IOU('X:\\BEP_data\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Predict_set\\Output')
-    gen_iou_dict, gen_pearson_dict = output_IOU('X:\\BEP_data\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\{}\\Masks_Generated'.format(dataset))
+    gen_iou_dict, gen_pearson_dict = output_IOU('X:\\BEP_data\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Annotation_Iteration\\Generated_backups\\man_mask_dis_em_lapga_entr_rad73_cl4_2021-06-15_16-10-03\\Output'.format(dataset))
 
     item_iou_list = set(pred_iou_dict.keys()) & set(gen_iou_dict.keys())
     for item in sorted(item_iou_list):
-        print('Image {} has a ML IOU {:.2f}, pearson {:.2f} and No ML IOU {:.2f}, pearson {:.2f}, difference {:.2f} and {:.2f}'.format(item, pred_iou_dict[item], pred_pearson_dict[item], gen_iou_dict[item], gen_pearson_dict[item], pred_iou_dict[item] - gen_iou_dict[item], pred_pearson_dict[item] - gen_pearson_dict[item]))
+        # print('Image {} has a ML IOU {:.2f}, pearson {:.2f} and No ML IOU {:.2f}, pearson {:.2f}, difference {:.2f} and {:.2f}'.format(item, pred_iou_dict[item], pred_pearson_dict[item], gen_iou_dict[item], gen_pearson_dict[item], pred_iou_dict[item] - gen_iou_dict[item], pred_pearson_dict[item] - gen_pearson_dict[item]))
+        print('Image {} has a ML IOU {:.2f} and Gen IOU {:.2f}'.format(item, pred_iou_dict[item],  gen_iou_dict[item]))
