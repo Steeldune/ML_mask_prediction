@@ -364,7 +364,7 @@ def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, i
         img = img1.split('\\')[-1]
         if not os.path.exists(ho_folder + '\\Collected\\' + img):
             continue
-        mask_img = cv2_imread(predict_set + '\\Output\\' + img) / 255
+        mask_img = cv2.imread(predict_set + '\\Output\\' + img, cv2.IMREAD_GRAYSCALE) / 255
         EM_img = cv2_imread(em_folder + '\\Collected\\' + img)
         HO_img = cv2_imread(ho_folder + '\\Collected\\' + img)
         masked_img = np.dstack(
@@ -374,7 +374,7 @@ def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, i
         cv2.imwrite(predict_set + '\\EM_overlay\\' + 'em_overlay_' + img, masked_img)
 
         if glob(mask_folder + img) != []:
-            man_mask_img = cv2_imread(mask_folder + img)
+            man_mask_img = cv2.imread(mask_folder + img, cv2.IMREAD_GRAYSCALE)
             overl_img = mask_img * man_mask_img / 255
             overl_img = np.multiply(overl_img, 255.0)
 

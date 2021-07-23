@@ -52,7 +52,7 @@ def get_radius_sample(mask_directory):
 def get_annotated_control_points(image):
     ret, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     contours, hierarchy = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    contours_thresh = [cnt for cnt in contours if cv2.contourArea(cnt) > 100]
+    contours_thresh = [cnt for cnt in contours if cv2.contourArea(cnt) > 10]
 
     mass_centres = np.zeros((len(contours_thresh), 2), dtype=int)
 

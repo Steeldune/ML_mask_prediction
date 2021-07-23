@@ -44,7 +44,7 @@ if __name__ == '__main__':
     dataset = 'RL012'
 
     pred_iou_dict, pred_pearson_dict = output_IOU('X:\\BEP_data\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Predict_set\\Output')
-    gen_iou_dict, gen_pearson_dict = output_IOU('X:\\BEP_data\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Annotation_Iteration\\Generated_backups\\man_mask_dis_em_lapga_entr_rad73_cl4_2021-06-15_16-10-03\\Output'.format(dataset))
+    gen_iou_dict, gen_pearson_dict = output_IOU('X:\\BEP_data\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Annotation_Iteration\\Generated_set\\Output'.format(dataset))
 
     item_iou_list = set(pred_iou_dict.keys()) & set(gen_iou_dict.keys())
     for item in sorted(item_iou_list):
