@@ -5,6 +5,7 @@ from skimage.morphology import disk
 from glob import glob
 from scipy.ndimage.interpolation import map_coordinates
 from scipy.ndimage.filters import gaussian_filter
+import shutil
 
 
 def cv2_imread(file_path):
@@ -58,31 +59,11 @@ def elastic_transform(img_path, alpha=200, sigma=20):
 
 
 if __name__ == '__main__':
-    img_file = 'X:\\BEP_data\\RL012\\Manual Masks\\'
-    pred_file = 'X:\\BEP_data\\Predict_set\\Output\\'
-    img_list = glob(img_file + '4_3_2_3*')
-
-    # cv2.imshow('Image 1', img1)
-    for img_str in img_list:
-        img1 = cv2_imread(img_str)
-
-        # img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-
-        img2 = holes_random(img_str, iterations=40)
-
-        img3 = img1/255 * img2/255
-        img3 = np.multiply(img3, 255.0)
-
-        img4 = np.dstack((img1, img3.astype(np.uint8), img2))
-
-        cv2.imwrite(img_str.split('.')[0] + '_puncture_40.png', img4)
-
-    # database = 'RL012'
-    #
-    # img_list = glob('X:\\BEP_data\\{}\\EM\\Collected\\[1-9]_[1-4]_[1-4]_*.png'.format(database))
-    # for img in img_list:
-    #     img_EM = cv2_imread(img)
-    #     img_HO = cv2_imread('X:\\BEP_data\\{}\\Hoechst\\Collected\\'.format(database) + img.split('\\')[-1])
-    #
-    #     _, img_EM_thresh = cv2.threshold(img_EM, 2, 1, cv2.THRESH_BINARY)
-    #     cv2.imwrite('X:\\BEP_data\\{}\\Hoechst_Thresh\\Collected\\'.format(database) + img.split('\\')[-1], img_HO * img_EM_thresh)
+    data_path = 'X:\\BEP_data\\Data_External\\RL015\\Hoechst'
+    target_path = 'X:\\BEP_data\\Data_External\\RL015\\Hoechst\\Collected\\'
+    for i in range(1, 6):
+        img_folder_path = data_path + '\\{}\\'.format(str(i))
+        img_list = glob(img_folder_path+ '*2.png')
+        for img in img_list:
+            img_name = img.split('\\')[-1]
+            shutil.copy(img, target_path + '{}_'.format(str(i)) + img_name)

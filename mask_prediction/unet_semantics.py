@@ -291,7 +291,7 @@ def Train_Model(ini_data_path, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     return model, train_generator, test_generator
 
 
-def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_data\\Predict_set\\', only_EM=False,
+def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_data\\Data_Internal\\Predict_set\\', only_EM=False,
                normalize=False):
     """
     This function loads a model that has been made, and saves predictions from the data it has been given. Supply it
@@ -331,8 +331,9 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
     )
     validation_generator = test_datagen.flow_from_directory(export_path + 'Input\\',
                                                             target_size=(1024, 1024),
-                                                            batch_size=4,
+                                                            batch_size=1,
                                                             shuffle=False,
+                                                            class_mode=None,
                                                             color_mode=('rgb', 'grayscale')[only_EM])
 
     output = model.predict(validation_generator)
@@ -373,7 +374,7 @@ def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, i
              EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)))))
         cv2.imwrite(predict_set + '\\EM_overlay\\' + 'em_overlay_' + img, masked_img)
 
-        if glob(mask_folder + img) != []:
+        if glob(mask_folder + '\\' + img) != []:
             man_mask_img = cv2.imread(mask_folder + img, cv2.IMREAD_GRAYSCALE)
             overl_img = mask_img * man_mask_img / 255
             overl_img = np.multiply(overl_img, 255.0)
