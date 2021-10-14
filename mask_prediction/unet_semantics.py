@@ -291,14 +291,14 @@ def Train_Model(ini_data_path, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     return model, train_generator, test_generator
 
 
-def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_data\\Data_Internal\\Predict_set\\', only_EM=False,
+def Use_Model(model_path, data_paths, glob_str, dataset, export_path='X:\\BEP_data\\Data_Internal\\Predict_set\\', only_EM=False,
                normalize=False):
     """
     This function loads a model that has been made, and saves predictions from the data it has been given. Supply it
     with a folder and a filter for the images to predict on, and you're golden. Input data will be pulled
     from given datasets, and will be placed in the same file structure where output data will be exported to.
     :param model_path:  Address where the model can be found.
-    :param data_path:   Address where datasets can be found. For instance, the folder containing 'RL012'.
+    :param data_paths:  Address where datasets can be found. For instance, the folder containing 'RL012'.
     :param glob_str:    String on which the images within the data_path will be filtered. For instance, putting in '4_*' will only predict on images of z-level 4.
     :param dataset:     Specifies which dataset will be used. For instance: 'RL012'
     :param export_path: Address where the prediction data will be exported to, both input and output.
@@ -307,7 +307,7 @@ def Use_Model(model_path, data_path, glob_str, dataset, export_path='X:\\BEP_dat
     :param normalize:   Boolean on whether to normalize input data.
     :return:            True
     """
-    EM_addresses = glob(data_path + dataset + '\\EM\\Collected\\' + glob_str)
+    EM_addresses = glob(data_paths[0] + '\\' + glob_str)
     for EM_ad in EM_addresses:
         """For each image in the glob string, the EM data is pulled, along with the secondary data, if requested. 
         This will then be written into the predict_data folder as input data. This operation is deliberate, 
