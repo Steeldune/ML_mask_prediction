@@ -43,10 +43,10 @@ def output_IOU(file_ground, file_pred):
 if __name__ == '__main__':
     dataset = 'RL012'
 
-    pred_iou_dict, pred_pearson_dict = output_IOU('X:\\BEP_data\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Predict_set\\Output')
-    gen_iou_dict, gen_pearson_dict = output_IOU('X:\\BEP_data\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Annotation_Iteration\\Generated_set\\Output'.format(dataset))
+    pred_iou_dict, pred_pearson_dict = output_IOU('X:\\BEP_data\\Data_External\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Data_Internal\\Predict_set\\Output')
+    gen_iou_dict, gen_pearson_dict = output_IOU('X:\\BEP_data\\Data_External\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Data_Internal\\Annotation_Iteration\\Generated_backups\\man_mask_everythingnoho_rad90_cl4_2021-06-23_11-55-58\\Output'.format(dataset))
 
     item_iou_list = set(pred_iou_dict.keys()) & set(gen_iou_dict.keys())
     for item in sorted(item_iou_list):
-        # print('Image {} has a ML IOU {:.2f}, pearson {:.2f} and No ML IOU {:.2f}, pearson {:.2f}, difference {:.2f} and {:.2f}'.format(item, pred_iou_dict[item], pred_pearson_dict[item], gen_iou_dict[item], gen_pearson_dict[item], pred_iou_dict[item] - gen_iou_dict[item], pred_pearson_dict[item] - gen_pearson_dict[item]))
-        print('Image {} has a ML IOU {:.2f} and Gen IOU {:.2f}'.format(item, pred_iou_dict[item],  gen_iou_dict[item]))
+        print('Image {} has a ML IOU {:.2f}, pearson {:.2f} and No ML IOU {:.2f}, pearson {:.2f}, difference {:.2f} and {:.2f}'.format(item, pred_iou_dict[item], pred_pearson_dict[item], gen_iou_dict[item], gen_pearson_dict[item], pred_iou_dict[item] - gen_iou_dict[item], pred_pearson_dict[item] - gen_pearson_dict[item]))
+        #print('Image {} has a ML IOU {:.2f} and Gen IOU {:.2f}'.format(item, pred_iou_dict[item],  gen_iou_dict[item]))
