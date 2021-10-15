@@ -291,7 +291,7 @@ def Train_Model(ini_data_path, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     return model, train_generator, test_generator
 
 
-def Use_Model(model_path, data_paths, glob_str, dataset, export_path='X:\\BEP_data\\Data_Internal\\Predict_set\\', only_EM=False,
+def Use_Model(model_path, em_folder, ho_folder, glob_str, export_path='X:\\BEP_data\\Data_Internal\\Predict_set\\', only_EM=False,
                normalize=False):
     """
     This function loads a model that has been made, and saves predictions from the data it has been given. Supply it
@@ -307,7 +307,7 @@ def Use_Model(model_path, data_paths, glob_str, dataset, export_path='X:\\BEP_da
     :param normalize:   Boolean on whether to normalize input data.
     :return:            True
     """
-    EM_addresses = glob(data_paths[0] + '\\' + glob_str)
+    EM_addresses = glob(em_folder + '\\' + glob_str)
     for EM_ad in EM_addresses:
         """For each image in the glob string, the EM data is pulled, along with the secondary data, if requested. 
         This will then be written into the predict_data folder as input data. This operation is deliberate, 
@@ -316,8 +316,8 @@ def Use_Model(model_path, data_paths, glob_str, dataset, export_path='X:\\BEP_da
         EM_img = cv2_imread(EM_ad)
         if only_EM:
             out_img = cv2_imread(EM_ad)
-        elif os.path.exists(data_path + dataset + '\\Hoechst\\Collected\\' + img_str):
-            HO_img = cv2_imread(data_path + dataset + '\\Hoechst\\Collected\\' + img_str)
+        elif os.path.exists(ho_folder + '\\' + img_str):
+            HO_img = cv2_imread(ho_folder +'\\' + img_str)
             if normalize:
                 HO_img = cv2.normalize(HO_img, None, 255, 0, cv2.NORM_INF)
             out_img = np.dstack((EM_img, HO_img, np.zeros((1024, 1024), np.uint8)))
@@ -359,29 +359,29 @@ def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, i
     Finally, the images are stored in a backup location named after the model that was used, and the time it was invoked.
     """
     if img_strs is None:
-        img_strs = glob(em_folder + '\\Collected\\{}'.format(glob_str))
+        img_strs = glob(em_folder + '\\{}'.format(glob_str))
 
     for img1 in img_strs:
         img = img1.split('\\')[-1]
-        if not os.path.exists(ho_folder + '\\Collected\\' + img):
+        if not os.path.exists(ho_folder + '\\' + img):
             continue
         mask_img = cv2.imread(predict_set + '\\Output\\' + img, cv2.IMREAD_GRAYSCALE) / 255
-        EM_img = cv2_imread(em_folder + '\\Collected\\' + img)
-        HO_img = cv2_imread(ho_folder + '\\Collected\\' + img)
+        EM_img = cv2_imread(em_folder + '\\' + img)
+        HO_img = cv2_imread(ho_folder + '\\' + img)
         masked_img = np.dstack(
             (EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX))) * (1 - mask_img),
              EM_img * (1 - mask_img),
              EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)))))
         cv2.imwrite(predict_set + '\\EM_overlay\\' + 'em_overlay_' + img, masked_img)
 
-        if glob(mask_folder + '\\' + img) != []:
-            man_mask_img = cv2.imread(mask_folder + img, cv2.IMREAD_GRAYSCALE)
-            overl_img = mask_img * man_mask_img / 255
-            overl_img = np.multiply(overl_img, 255.0)
-
-            mask_overlap = np.dstack(
-                (man_mask_img, overl_img.astype(np.uint8), np.multiply(mask_img, 255.0).astype(np.uint8)))
-            cv2.imwrite(predict_set + '\\Mask_overlaps\\' + 'overlap_' + img, mask_overlap)
+        # if glob(mask_folder + '\\' + img) != []:
+        #     man_mask_img = cv2.imread(mask_folder + img, cv2.IMREAD_GRAYSCALE)
+        #     overl_img = mask_img * man_mask_img / 255
+        #     overl_img = np.multiply(overl_img, 255.0)
+        #
+        #     mask_overlap = np.dstack(
+        #         (man_mask_img, overl_img.astype(np.uint8), np.multiply(mask_img, 255.0).astype(np.uint8)))
+        #     cv2.imwrite(predict_set + '\\Mask_overlaps\\' + 'overlap_' + img, mask_overlap)
 
     today = datetime.datetime.now()
     backup_predicts(predict_set,
