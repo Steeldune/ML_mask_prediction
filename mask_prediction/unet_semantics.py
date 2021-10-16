@@ -85,6 +85,7 @@ def bce_dice_loss_weighted(y_true, y_pred):
 
     return loss
 
+
 def MSE_loss_weighted(y_true, y_pred):
     y_mask, y_weights, y_amplify = tf.split(y_true, [1, 1, 1], 3)
     # tf.print(y_mask)
@@ -291,8 +292,9 @@ def Train_Model(ini_data_path, IMG_WIDTH=1024, IMG_HEIGHT=1024,
     return model, train_generator, test_generator
 
 
-def Use_Model(model_path, em_folder, ho_folder, glob_str, export_path='X:\\BEP_data\\Data_Internal\\Predict_set\\', only_EM=False,
-               normalize=False):
+def Use_Model(model_path, em_folder, ho_folder, glob_str, export_path='X:\\BEP_data\\Data_Internal\\Predict_set\\',
+              only_EM=False,
+              normalize=False):
     """
     This function loads a model that has been made, and saves predictions from the data it has been given. Supply it
     with a folder and a filter for the images to predict on, and you're golden. Input data will be pulled
@@ -317,7 +319,7 @@ def Use_Model(model_path, em_folder, ho_folder, glob_str, export_path='X:\\BEP_d
         if only_EM:
             out_img = cv2_imread(EM_ad)
         elif os.path.exists(ho_folder + '\\' + img_str):
-            HO_img = cv2_imread(ho_folder +'\\' + img_str)
+            HO_img = cv2_imread(ho_folder + '\\' + img_str)
             if normalize:
                 HO_img = cv2.normalize(HO_img, None, 255, 0, cv2.NORM_INF)
             out_img = np.dstack((EM_img, HO_img, np.zeros((1024, 1024), np.uint8)))
@@ -343,8 +345,8 @@ def Use_Model(model_path, em_folder, ho_folder, glob_str, export_path='X:\\BEP_d
     """Once the prediction has been made, it is written as a png in the predict_set folder."""
     return True
 
-def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, img_strs=None):
 
+def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, img_strs=None):
     train_folder, test_folder, em_folder, ho_folder, mask_folder = data_paths
 
     """Beneath is some data processing code which takes predictions and does two things:
@@ -374,65 +376,32 @@ def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, i
              EM_img * (1 - (cv2.normalize(HO_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)))))
         cv2.imwrite(predict_set + '\\EM_overlay\\' + 'em_overlay_' + img, masked_img)
 
-        # if glob(mask_folder + '\\' + img) != []:
-        #     man_mask_img = cv2.imread(mask_folder + img, cv2.IMREAD_GRAYSCALE)
-        #     overl_img = mask_img * man_mask_img / 255
-        #     overl_img = np.multiply(overl_img, 255.0)
-        #
-        #     mask_overlap = np.dstack(
-        #         (man_mask_img, overl_img.astype(np.uint8), np.multiply(mask_img, 255.0).astype(np.uint8)))
-        #     cv2.imwrite(predict_set + '\\Mask_overlaps\\' + 'overlap_' + img, mask_overlap)
+        if glob(mask_folder + '\\' + img) != []:
+            man_mask_img = cv2.imread(mask_folder + img, cv2.IMREAD_GRAYSCALE)
+            overl_img = mask_img * man_mask_img / 255
+            overl_img = np.multiply(overl_img, 255.0)
+
+            mask_overlap = np.dstack(
+                (man_mask_img, overl_img.astype(np.uint8), np.multiply(mask_img, 255.0).astype(np.uint8)))
+            cv2.imwrite(predict_set + '\\Mask_overlaps\\' + 'overlap_' + img, mask_overlap)
 
     today = datetime.datetime.now()
     backup_predicts(predict_set,
                     predict_backup + '\\{}'.format(model_name + '_' + today.strftime("%Y-%m-%d_%H-%M-%S")))
+    return True
 
 
 if __name__ == '__main__':
-    new_time = time.asctime()
-    model_name = 'qu_base_em_predho_test'
+    em_folder = 'X:\\BEP_data\\Data_External\\RL015\\EM\\Collected'  # Folder containing the EM datasets
+    fm_folder = 'X:\\BEP_data\\Data_External\\RL015\\Hoechst\\Collected'  # Folder containing the Hoechst datasets
+    mask_folder = 'X:\\BEP_data\\Data_External\\RL015\\PPA_Upscale'  # Folder containing Partial Point Annotations
+    nn_folder = 'X:\\BEP_data\\Data_Internal\\Qu_Iteration'  # Folder where the program will store all its images
+    train_folder = nn_folder + '\\Train_set'  # Folder from which the model will collect training images
+    test_folder = nn_folder + '\\Test_set'  # Folder from which the model will collect validation images
+    prt_ann_folder = nn_folder + '\\Weighted_masks'  # Folder in which the weighted masks are stored that are used in partial annotation.
+    predict_folder = nn_folder + '\\Predict_set'  # Folder structure where the network will export to
+    backup_folder = nn_folder + '\\Predict_backups'
 
-    scandirs('X:\\BEP_data\\Predict_set')
-    ini_data_path = 'X:\\BEP_data\\'
-    dataset = 'RL010'
-    glob_str = '*.png'
-    Ho_adjust = False
-    using_weights=True
-    model_export = 'Models\\{}'.format(model_name)
-    BATCH_SIZE=4
-    patience=50
+    data_paths = (train_folder, test_folder, em_folder, fm_folder, mask_folder)
 
-    ####################################################################################################################
-
-    train_size = len(os.listdir('X:\\BEP_data\\Train_set\\Train_masks\\1'))
-    test_size = len(os.listdir('X:\\BEP_data\\Test_set\\Test_masks\\1'))
-
-    model, train_generator, test_generator = Train_Model(ini_data_path, model_export, IMG_CHANNELS=3, BATCH_SIZE=4, patience=50,
-                        normalize=False, using_weights=using_weights, train_size=78, test_size=7)
-
-    model.compile(optimizer='adam', loss=([bce_dice_loss], [MSE_loss_weighted])[using_weights],
-                      metrics=([dice_loss], [bce_dice_loss_weighted])[using_weights])
-
-    checkpointer = tf.keras.callbacks.ModelCheckpoint('{}.h5'.format('10jan1058'), verbose=1, save_best_only=True)
-    callbacks = [tf.keras.callbacks.EarlyStopping(patience=patience),
-                 tf.keras.callbacks.TensorBoard(log_dir='logs', histogram_freq=1)]
-
-    results = model.fit(train_generator, validation_data=test_generator, steps_per_epoch=train_size // BATCH_SIZE,
-                        validation_steps=test_size // BATCH_SIZE,
-                        epochs=1000, callbacks=callbacks, batch_size=BATCH_SIZE)
-    model.save(model_export + '.h5', include_optimizer=False)
-    print('Done! Model can be found in ' + model_export)
-
-
-
-
-    # Train_Model(ini_data_path, 'Models\\{}'.format(model_name), IMG_CHANNELS=3, BATCH_SIZE=4, patience=50,
-    #             normalize=False, using_weights=True, train_size=78, test_size=7)
-    # # img_strs = data_augments.gen_input_from_img_coords(ini_data_path, (1, 1, 4, 4), Z=Zlevel, use_predicted_data=False, only_EM=False)
-    #
-
-    Use_Model('Models\\{}'.format(model_name), ini_data_path, glob_str, dataset, only_EM=False,
-              normalize=True)
-
-    backup_data(ini_data_path, dataset, glob_str, model_name, 'X:\\BEP_data\\Predict_set', 'X:\\BEP_data\\Predict_backups')
-
+    backup_data(data_paths, '*.png', 'test_backup', predict_folder, backup_folder)
