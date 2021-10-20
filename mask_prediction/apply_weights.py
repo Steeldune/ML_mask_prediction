@@ -94,7 +94,7 @@ def add_gauss(ctrl_points, diameter, IMG_SIZE=1024, sigmaScale=2):
     return out_image
 
 
-def gen_mask_with_weights(mask, ini_weight, diameter, pnt_ratio=1.0, sigma=2):
+def gen_mask_with_weights(mask, ini_weight, diameter, gauss_map, pnt_ratio=1.0, sigma=2, IMG_SIZE=1024):
     mask_img = cv2.imread(mask, cv2.IMREAD_GRAYSCALE)
     if type(ini_weight) is str:
         ini_weight_img = cv2.imread(ini_weight, cv2.IMREAD_GRAYSCALE)
@@ -106,17 +106,41 @@ def gen_mask_with_weights(mask, ini_weight, diameter, pnt_ratio=1.0, sigma=2):
         ctrl_pnts = sample_points(ctrl_pnts, pnt_ratio)
 
     weights_img = add_circles(ctrl_pnts, diameter)
-    gauss_img = add_gauss(ctrl_pnts, diameter, sigmaScale=sigma)
+
+    gauss_img = np.zeros((IMG_SIZE, IMG_SIZE), dtype=np.int)
+
+    for pnt in ctrl_pnts:
+        if len(pnt) == 2:
+            M = np.float32([
+                [1, 0, pnt[0] - IMG_SIZE//2],
+                [0, 1, pnt[1] - IMG_SIZE//2]
+            ])
+            gauss_img = gauss_img + cv2.warpAffine(gauss_map, M, (gauss_map.shape[1], gauss_map.shape[0]))
+
+    # gauss_img = add_gauss(ctrl_pnts, diameter, sigmaScale=sigma)
     weights_img_2 = add_circles(ctrl_pnts, diameter//2)
     final_img = np.dstack([gauss_img, weights_img, weights_img_2])
     return final_img
 
+
 def convert_partial_annotation(file_address, export_address, diameter, glob_str = '\\*.png', IMG_SIZE=1024, size_filter=-1, pnt_ratio=1.0, sigma=2):
     mask_list = glob(file_address + glob_str)
     ex_mask_list = []
+
+    x = np.linspace(0, IMG_SIZE - 1, IMG_SIZE, dtype=int)
+    xv, yv = np.meshgrid(x, x)
+
+    xv_dist = np.abs(xv - IMG_SIZE//2)
+    yv_dist = np.abs(yv - IMG_SIZE//2)
+
+    dist_map = (np.power(xv_dist, 2) + np.power(yv_dist, 2))
+    dist_map_thresh = dist_map < np.power(diameter // 2, 2)
+    gauss_map = np.exp((dist_map * -1) / (diameter * sigma)) * 255
+    gauss_map *= dist_map_thresh
+
     for img in mask_list:
         img_name = img.split('\\')[-1]
-        mask_img = gen_mask_with_weights(img, np.zeros((IMG_SIZE, IMG_SIZE), dtype=int), diameter, pnt_ratio=pnt_ratio, sigma=sigma)
+        mask_img = gen_mask_with_weights(img, np.zeros((IMG_SIZE, IMG_SIZE), dtype=int), diameter, gauss_map, pnt_ratio=pnt_ratio, sigma=sigma, IMG_SIZE=IMG_SIZE)
         if np.sum(mask_img) > size_filter:
             cv2.imwrite('{}\\{}'.format(export_address, img_name), mask_img)
             ex_mask_list.append('{}\\{}'.format(export_address, img_name))

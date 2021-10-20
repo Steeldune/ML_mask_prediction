@@ -377,7 +377,7 @@ def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, i
         cv2.imwrite(predict_set + '\\EM_overlay\\' + 'em_overlay_' + img, masked_img)
 
         if glob(mask_folder + '\\' + img) != []:
-            man_mask_img = cv2.imread(mask_folder + img, cv2.IMREAD_GRAYSCALE)
+            man_mask_img = cv2.imread(mask_folder + '\\' + img, cv2.IMREAD_GRAYSCALE)
             overl_img = mask_img * man_mask_img / 255
             overl_img = np.multiply(overl_img, 255.0)
 
@@ -386,7 +386,7 @@ def backup_data(data_paths, glob_str, model_name, predict_set, predict_backup, i
             cv2.imwrite(predict_set + '\\Mask_overlaps\\' + 'overlap_' + img, mask_overlap)
 
     today = datetime.datetime.now()
-    backup_predicts(predict_set,
+    backup_predicts(predict_set + '\\',
                     predict_backup + '\\{}'.format(model_name + '_' + today.strftime("%Y-%m-%d_%H-%M-%S")))
     return True
 
@@ -404,4 +404,4 @@ if __name__ == '__main__':
 
     data_paths = (train_folder, test_folder, em_folder, fm_folder, mask_folder)
 
-    backup_data(data_paths, '*.png', 'test_backup', predict_folder, backup_folder)
+    backup_data(data_paths, '1_*.png', 'test_backup', predict_folder, backup_folder)
