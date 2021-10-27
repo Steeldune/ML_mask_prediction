@@ -28,10 +28,10 @@ def gen_input_from_mask(data_paths, work_with_fm=True, adjust_test=False, normal
     export_path = (train_path, test_path)[adjust_test] + ('\\data\\1\\', '\\data\\1\\')[adjust_test]
     export_list = []
     for img_string in file_list:
-        EM_path = em_path + '\\Collected\\{}'.format(img_string)
+        EM_path = em_path + '\\{}'.format(img_string)
         EM_img = cv2_imread(EM_path)
         if work_with_fm:
-            HO_path = ho_path + ('\\Collected\\{}'.format(img_string))
+            HO_path = ho_path + ('\\{}'.format(img_string))
             HO_img = cv2_imread(HO_path)
             if normalize:
                 HO_img = cv2.normalize(HO_img, None, 255, 0, cv2.NORM_INF)
