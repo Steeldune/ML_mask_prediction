@@ -41,12 +41,25 @@ def output_IOU(file_ground, file_pred):
 
 
 if __name__ == '__main__':
-    dataset = 'RL012'
+    man_mask_folder = 'X:\\BEP_data\\Data_External\\RL012\\Manual_Masks'
+    pred_out_folder = 'X:\\BEP_data\\Data_Internal\\Train_Masks\\Predict_backups\\pancreas_final_train_final_2021-11-29_19-09-39\\Output'
+    gen_out_folder = 'X:\\BEP_data\\Data_Internal\\Gen_Masks\\Generated_backups\\pancreas_130_last_2021-11-29_17-23-25\\Output'
+    qu_out_folder = 'X:\\BEP_data\\Data_Internal\\Qu_Iteration\\Predict_backups\\pancreas_it10_sig25_diam13010_2021-11-29_17-04-52\\Output'
 
-    pred_iou_dict, pred_pearson_dict = output_IOU('X:\\BEP_data\\Data_External\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Data_Internal\\Predict_set\\Output')
-    gen_iou_dict, gen_pearson_dict = output_IOU('X:\\BEP_data\\Data_External\\{}\\Manual Masks'.format(dataset), 'X:\\BEP_data\\Data_Internal\\Annotation_Iteration\\Generated_backups\\man_mask_everythingnoho_rad90_cl4_2021-06-23_11-55-58\\Output'.format(dataset))
+    pred_iou_dict, _ = output_IOU(man_mask_folder, pred_out_folder)
+    gen_iou_dict, _ = output_IOU(man_mask_folder, gen_out_folder)
+    qu_iou_dict, _ = output_IOU(man_mask_folder, qu_out_folder)
 
-    item_iou_list = set(pred_iou_dict.keys()) & set(gen_iou_dict.keys())
+    item_iou_list = set(pred_iou_dict.keys()) & set(gen_iou_dict.keys()) & set(qu_iou_dict.keys())
     for item in sorted(item_iou_list):
-        print('Image {} has a ML IOU {:.2f}, pearson {:.2f} and No ML IOU {:.2f}, pearson {:.2f}, difference {:.2f} and {:.2f}'.format(item, pred_iou_dict[item], pred_pearson_dict[item], gen_iou_dict[item], gen_pearson_dict[item], pred_iou_dict[item] - gen_iou_dict[item], pred_pearson_dict[item] - gen_pearson_dict[item]))
-        #print('Image {} has a ML IOU {:.2f} and Gen IOU {:.2f}'.format(item, pred_iou_dict[item],  gen_iou_dict[item]))
+        print('Image {} has a Qu IOU {:.2f}, Gen IOU {:.2f}, pred IOU {:.2f}, difference {:.2f}'.format(item,
+                                                                                                        qu_iou_dict[
+                                                                                                            item],
+                                                                                                        gen_iou_dict[
+                                                                                                            item],
+                                                                                                        pred_iou_dict[
+                                                                                                            item],
+                                                                                                        pred_iou_dict[
+                                                                                                            item] -
+                                                                                                        gen_iou_dict[
+                                                                                                            item]))

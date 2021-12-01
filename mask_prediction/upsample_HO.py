@@ -4,7 +4,7 @@ import numpy as np
 
 image_folder = 'X:\\BEP_data\\Data_External\\RL015'
 
-image_list = glob.glob(image_folder + '\\PPA\\*.png')
+image_list = glob.glob(image_folder + '\\Man_mask\\*.png')
 for im_str in image_list:
     im_name = im_str.split('\\')[-1].split('.')[0].split('_')
 
@@ -22,7 +22,7 @@ for im_str in image_list:
     im_2 = im_up[1024:, :1024]
     im_3 = im_up[:1024, 1024:]
     im_4 = im_up[1024:, 1024:]
-    cv2.imwrite(image_folder + '\\PPA_Upscale\\{}_{}_{}_2.png'.format(im_name[0], str(im_name[1]*2), str(im_name[2]*2)), im_1)
-    cv2.imwrite(image_folder + '\\PPA_Upscale\\{}_{}_{}_2.png'.format(im_name[0], str(im_name[1]*2 + 1), str(im_name[2]*2)), im_2)
-    cv2.imwrite(image_folder + '\\PPA_Upscale\\{}_{}_{}_2.png'.format(im_name[0], str(im_name[1]*2), str(im_name[2]*2+1)), im_3)
-    cv2.imwrite(image_folder + '\\PPA_Upscale\\{}_{}_{}_2.png'.format(im_name[0], str(im_name[1]*2+1), str(im_name[2]*2+1)), im_4)
+    cv2.imwrite(image_folder + '\\Man_mask_Upscale\\{}_{}_{}_2.png'.format(im_name[0], str(im_name[1]*2), str(im_name[2]*2)), im_1)
+    cv2.imwrite(image_folder + '\\Man_mask_Upscale\\{}_{}_{}_2.png'.format(im_name[0], str(im_name[1]*2 + 1), str(im_name[2]*2)), im_2)
+    cv2.imwrite(image_folder + '\\Man_mask_Upscale\\{}_{}_{}_2.png'.format(im_name[0], str(im_name[1]*2), str(im_name[2]*2+1)), im_3)
+    cv2.imwrite(image_folder + '\\Man_mask_Upscale\\{}_{}_{}_2.png'.format(im_name[0], str(im_name[1]*2+1), str(im_name[2]*2+1)), im_4)
